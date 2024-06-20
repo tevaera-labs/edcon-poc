@@ -28,7 +28,8 @@ function ERC20() {
     {
       value: "$walletAddress",
       placeHolder: "Ex: $walletAddress",
-    },{ value: "$amount", placeHolder: "$amount" }
+    },
+    { value: "$amount", placeHolder: "$amount" },
   ]);
   const [isApproved, setIsApproved] = useState<boolean>(false);
   const [spenderAddress, setSpenderAddress] = useState<string>("");
@@ -60,7 +61,7 @@ function ERC20() {
 
       const gasPrice = (await wallet?.provider.getFeeData()).gasPrice;
       const gasLimit = "1000000";
-      
+
       const params = JSON.parse(decodedData);
 
       const contract = new Contract(
@@ -71,22 +72,33 @@ function ERC20() {
 
       const argsPassed = params.args;
 
-
-      const args = argsPassed.map((arg: string) => {
-        if (arg === "$walletAddress") {
-          return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
-        } else if (arg === "$amount") {
-          return amount;
-        }
-        return arg;
-      });
-
+      let args;
+      if (functionName === "transfer") {
+        args = argsPassed.map((arg: string) => {
+          if (arg === "$walletAddress") {
+            return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
+          } else if (arg === "$amount") {
+            return amount;
+          }
+          return arg;
+        });
+      } else if (functionName === "transferFrom") {
+        args = argsPassed.map((arg: string) => {
+          if (arg === "$recipient") {
+            return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
+          } else if (arg === "$sender") {
+            return spenderAddress;
+          } else if (arg === "$amount") {
+            return amount;
+          }
+          return arg;
+        });
+      }
 
       const encodedTx = contract.interface.encodeFunctionData(
         params.method,
         args
       );
-
 
       const address = await wallet.getAddress();
       const transaction: TransactionRequest = {
@@ -99,14 +111,14 @@ function ERC20() {
       };
 
       const signedTx = await wallet.signTransaction(transaction);
-      console.log(signedTx, "check,", Transaction.from(signedTx).serialized);
+      // console.log(signedTx, "check,", Transaction.from(signedTx).serialized);
 
       const tx = await provider.broadcastTransaction(
         Transaction.from(signedTx).serialized
       );
 
       const data = await tx.wait();
-      console.log(tx, "data:", data);
+      console.log("data:", data);
     } catch (error) {
       console.log(error);
     }
@@ -145,10 +157,10 @@ function ERC20() {
         }
         method = otherFunctionName;
         contractABI = JSON.parse(otherAbi);
-      } else if(functionName === "transfer") {
+      } else if (functionName === "transfer") {
         method = functionName;
         contractABI = JSON.parse(defaultErc20TransferAbi);
-      }else{
+      } else {
         method = functionName;
         contractABI = JSON.parse(defaultErc20TransferFromAbi);
       }

@@ -93,23 +93,25 @@ function Nft() {
 
       const argsPassed = params.args;
 
-
-      const args = argsPassed.map((arg: string) => {
-        if (arg === "$walletAddress") {
-          return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
-        } else if (arg === "$operator") {
-          return operatorAddress;
-        }else if(arg === "$tokenId"){
-          return 1
-        }
-        return arg;
-      });
+      let args;
+      if (functionName === "transferFrom") {
+        args = argsPassed.map((arg: string) => {
+          if (arg === "$walletAddress") {
+            return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
+          } else if (arg === "$operator") {
+            return operatorAddress;
+          } else if (arg === "$tokenId") {
+            return 1;
+          }
+          return arg;
+        });
+      }
 
       const encodedTx = contract.interface.encodeFunctionData(
         params.method,
         args
       );
-      
+
       const address = await wallet.getAddress();
       const transaction: TransactionRequest = {
         from: address,
@@ -121,14 +123,14 @@ function Nft() {
       };
 
       const signedTx = await wallet.signTransaction(transaction);
-      console.log(signedTx, "check,", Transaction.from(signedTx).serialized);
+      // console.log(signedTx, "check,", Transaction.from(signedTx).serialized);
 
       const tx = await provider.broadcastTransaction(
         Transaction.from(signedTx).serialized
       );
 
       const data = await tx.wait();
-      console.log(tx, "data:", data);
+      console.log("data:", data);
     } catch (error) {
       console.log(error);
     }
@@ -214,7 +216,7 @@ function Nft() {
     e.preventDefault();
     try {
       let contractABI;
-      const method = fnName;
+      const method = functionName;
       const args = inputList.map((input) => input.value);
 
       if (functionName === "transferFrom") {
@@ -411,6 +413,7 @@ function Nft() {
                   <option value={1}>Ethereum</option>
                   <option value={324}>ZkSync</option>
                   <option value={8453}>Base</option>
+                  <option value={300}>ZkSync Sepolia</option> 
                 </select>
               </div>
             </div>

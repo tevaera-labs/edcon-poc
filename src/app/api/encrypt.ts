@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 const publicKeyPath = path.resolve('./keys/public.pem');
-const privateKeyPath = path.resolve('./keys/private.key');
+const privateKeyPath = path.resolve('./keys/private.pem');
 
 // Read the public and private keys
 const publicKey = fs.readFileSync(publicKeyPath, 'utf8');

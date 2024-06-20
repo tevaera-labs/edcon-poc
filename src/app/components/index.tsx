@@ -1,20 +1,10 @@
 "use client";
 import { useState } from "react";
-import { QRCode } from "react-qrcode-logo";
 import Nft from "./Nft";
 import ERC20 from "./ERC20";
 
 export default function CreateQr() {
-  const [enabled, setEnabled] = useState(true);
-  const [tokenEnabled, setTokenEnabled] = useState(0);
-  const [nftName, setNftSName] = useState<string>("");
-  const [contractAddress, setContractAddress] = useState<string>("");
-  const [preview, setPreview] = useState<string | null>(null);
-  const [fnName, setFnName] = useState<string>("");
-  const [ChainId, setChainId] = useState<number>();
-  const [abi, setAbi] = useState<string>("");
-  const [qrString, setQrSTring] = useState<string>("");
-  
+  const [tokenEnabled, setTokenEnabled] = useState(0);  
 
   return (
     <div className="container mx-auto px-8">

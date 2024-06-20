@@ -9,29 +9,33 @@ import { TransactionRequest } from "ethers";
 import { Contract, Provider, Wallet } from "zksync-ethers";
 import { Transaction } from "ethers";
 import { QRCode } from "react-qrcode-logo";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function ERC20() {
   const [contractAddress, setContractAddress] = useState<string>("");
-  const [quantity, setQuantity] = useState<number>();
+  const [amount, setAmount] = useState<number>(0);
   const [functionName, setFunctionName] = useState<string>("transfer");
   const [otherFunctionName, setOtherFunctionName] = useState<string>("");
 
   const [abi, setAbi] = useState<string>("");
   const [otherAbi, setOtherAbi] = useState<string>("");
   const [ChainId, setChainId] = useState<number>(1);
-  const [encodedData, setEncodedData] = useState<{
-    encryptedMessage: string;
-    encryptedAesKey: string;
-  }>({ encryptedAesKey: "", encryptedMessage: "" });
+  const [encodedData, setEncodedData] = useState<string>("");
   const [decodedData, setDecodeData] = useState<string>("");
   const [qrString, setQrSTring] = useState<string>("");
   const [inputList, setInputList] = useState([
-    { value: "$walletAddress", placeHolder: "Ex: $walletAddress" },
+    {
+      value: "$walletAddress",
+      placeHolder: "Ex: $walletAddress",
+    },
   ]);
+  const [isApproved, setIsApproved] = useState<boolean>(false);
+  const [spenderAddress, setSpenderAddress] = useState<string>("");
 
-  const placeHolders = ["Ex: $walletAddress", "Ex: $quantity", "Ex: $others"];
+  const placeHolders = ["Ex $recipent", "Ex: $amount","Ex: $others"];
 
-  const accPrivateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
+  const accPrivateKey = process.env.NEXT_PUBLIC_OWNER_PRIVATE;
 
   const decrypt = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -112,21 +116,36 @@ function ERC20() {
     event.preventDefault();
     setInputList([
       ...inputList,
-      { value: "", placeHolder: placeHolders[Math.floor(Math.random() * 3)] },
+      {
+        value: "",
+        placeHolder: placeHolders[Math.floor(Math.random() * 3)],
+      },
     ]);
   };
 
   async function createRawTransaction(e: any) {
     e.preventDefault();
+
+    if (!contractAddress) {
+      toast.error("Contract address needs to be filled.");
+      return;
+    }
+
     try {
-      const contractABI = JSON.parse(abi);
+      let contractABI;
       let method = "";
-      const args = inputList.map(input=>input.value);
+      const args = inputList.map((input) => input.value);
 
       if (functionName === "other") {
+        if (!otherFunctionName || !otherAbi) {
+          toast.error("Make sure you fill in the contract abi , function name");
+          return;
+        }
         method = otherFunctionName;
+        contractABI = JSON.parse(otherAbi);
       } else {
         method = functionName;
+        contractABI = JSON.parse(abi);
       }
 
       const data = {
@@ -160,14 +179,60 @@ function ERC20() {
     setInputList(newInputList);
   };
 
-  const handleFunctionChange = (event: ChangeEvent<HTMLSelectElement>) => {
+  // const ownerAddress = "0x6831b65e17b309588f8Da83861679FF85C2e8974";
+  // const spenderAddress = "0x04cF2053D8bb80d9cF97f46f78627f09E383b134";
+
+  const handleTransferFrom = async (e: any) => {
+    e.preventDefault();
+    const provider = new Provider("https://zksync-sepolia.drpc.org");
+    const wallet = new Wallet(accPrivateKey as string, provider);
+
+    const contractABI = [
+      "function approve(address spender, uint256 amount) external returns (bool)",
+      "function transferFrom(address sender, address recipient, uint256 amount) external returns (bool)",
+    ];
+
+    const contract = new Contract(contractAddress, contractABI, wallet);
+
+    try {
+      const isApproved = await contract.approve(spenderAddress, amount);
+    if (isApproved) {
+      toast.success("amount has been approved for transfer");
+      setIsApproved(true);
+    } else {
+      toast.error("Approval did not succeed");
+      setIsApproved(false);
+    }
+    } catch (error : any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleFunctionChange = async (
+    event: ChangeEvent<HTMLSelectElement>
+  ) => {
     const value = event.target.value;
     setFunctionName(value);
 
     if (value === "transfer") {
+      setInputList([
+        {
+          value: "$walletAddress",
+          placeHolder: "Ex: $walletAddress",
+        },
+        { value: "$amount", placeHolder: "$amount" },
+      ]);
       setAbi(JSON.stringify(defaultErc20TransferAbi));
     } else if (value === "transferFrom") {
       setAbi(JSON.stringify(defaultErc20TransferFromAbi));
+      setInputList([
+        {
+          value: "$sender",
+          placeHolder: "Ex: $sender",
+        },
+        { value: "$recipient", placeHolder: "Ex $recipent" },
+        { value: "$amount", placeHolder: "Ex $amount" },
+      ]);
     }
   };
 
@@ -197,17 +262,17 @@ function ERC20() {
           {functionName !== "other" && (
             <div className="sm:col-span-5 mt-5">
               <label
-                htmlFor="quantity"
+                htmlFor="amount"
                 className="block text-sm font-medium leading-6 text-gray-900"
               >
-                Total quantity to be transfered
+                Total amount to be transfered
               </label>
               <div className="mt-2">
                 <input
                   type="number"
-                  name="quantity"
-                  id="quantity"
-                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  name="amount"
+                  id="amount"
+                  onChange={(e) => setAmount(Number(e.target.value))}
                   autoComplete="given-name"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -223,6 +288,7 @@ function ERC20() {
             </label>
             <div className="mt-2">
               <select
+              defaultValue={"transfer"}
                 onChange={handleFunctionChange}
                 className="text-black rounded-md"
               >
@@ -232,6 +298,31 @@ function ERC20() {
               </select>
             </div>
           </div>
+          {functionName === "transferFrom" && (
+            <div className="sm:col-span-5 sm:col-start-1 mt-3">
+              <label
+                htmlFor="spender-address"
+                className="block text-sm font-medium leading-6 text-gray-900"
+              >
+                Spender Address
+              </label>
+              <div className="mt-2 flex justify-between">
+                <input
+                  type="text"
+                  name="spender-address"
+                  id="spender-address"
+                  onChange={(e) => setSpenderAddress(e.target.value)}
+                  className="w-1/2 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                />
+                <button
+                  onClick={handleTransferFrom}
+                  className="w-1/4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  Approve Funds
+                </button>
+              </div>
+            </div>
+          )}
           {functionName !== "transfer" && functionName !== "transferFrom" && (
             <div className="col-span-full">
               <div className="sm:col-span-5 sm:col-start-1">
@@ -335,9 +426,13 @@ function ERC20() {
               Cancel
             </button>
             <button
-              // type="submit"
+              disabled={functionName === "transferFrom" && !isApproved}
               onClick={createRawTransaction}
-              className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              className={`${
+                !isApproved && functionName === "transferFrom"
+                  ? "opacity-70"
+                  : "opacity-100"
+              } rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}
             >
               Generate QR
             </button>
@@ -379,6 +474,7 @@ function ERC20() {
           </div>
         </div>
       </div>
+      <ToastContainer />
     </>
   );
 }

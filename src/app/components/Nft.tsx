@@ -24,7 +24,18 @@ function Nft() {
   const [encodedData, setEncodedData] = useState<string>("");
   const [decodedData, setDecodeData] = useState<string>("");
   const [inputList, setInputList] = useState([
-    { value: "$walletAddress", placeHolder: "Ex: $walletAddress" },
+    {
+      value: "$operator",
+      placeHolder: "Ex: $operator",
+    },
+    {
+      value: "$walletAddress",
+      placeHolder: "Ex: $walletAddress",
+    },
+    {
+      value: "$tokenId",
+      placeHolder: "Ex: $tokenId",
+    },
   ]);
   const [operatorAddress, setOperatorAddress] = useState<string>("");
   const [isApproved, setIsApproved] = useState<boolean>(false);
@@ -52,7 +63,7 @@ function Nft() {
   ) => {
     e.preventDefault();
     const data = decryptMessage(encodedData);
-    console.log(JSON.parse(data))
+    console.log(JSON.parse(data));
     setDecodeData(data);
   };
 
@@ -82,21 +93,23 @@ function Nft() {
 
       const argsPassed = params.args;
 
-      let args = argsPassed;
 
-      if (argsPassed.includes("$walletAddress")) {
-        args = args.map((arg: string) => {
-          if (arg === "$walletAddress") {
-            return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
-          }
-          return arg;
-        });
-      }
+      const args = argsPassed.map((arg: string) => {
+        if (arg === "$walletAddress") {
+          return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
+        } else if (arg === "$operator") {
+          return operatorAddress;
+        }else if(arg === "$tokenId"){
+          return 1
+        }
+        return arg;
+      });
 
       const encodedTx = contract.interface.encodeFunctionData(
         params.method,
         args
       );
+      
       const address = await wallet.getAddress();
       const transaction: TransactionRequest = {
         from: address,
@@ -136,7 +149,7 @@ function Nft() {
 
     const contract = new Contract(contractAddress, contractABI, wallet);
     try {
-      const isApproved = false
+      const isApproved = false;
 
       if (!isApproved) {
         console.log(
@@ -179,19 +192,21 @@ function Nft() {
     const value = event.target.value;
     setFunctionName(value);
 
-    if(value === "transferFrom"){
-      setInputList([{
-        value: "$operator",
-        placeHolder: "Ex: $operator",
-      },
-      {
-        value: "$walletAddress",
-        placeHolder: "Ex: $walletAddress",
-      },
-      {
-        value: "$tokenId",
-        placeHolder: "Ex: $tokenId",
-      }])
+    if (value === "transferFrom") {
+      setInputList([
+        {
+          value: "$operator",
+          placeHolder: "Ex: $operator",
+        },
+        {
+          value: "$walletAddress",
+          placeHolder: "Ex: $walletAddress",
+        },
+        {
+          value: "$tokenId",
+          placeHolder: "Ex: $tokenId",
+        },
+      ]);
     }
   };
 
@@ -202,10 +217,10 @@ function Nft() {
       const method = fnName;
       const args = inputList.map((input) => input.value);
 
-      if(functionName === "transferFrom"){
+      if (functionName === "transferFrom") {
         contractABI = JSON.parse(defaultErc721TransferFromAbi);
-      }else{
-        contractABI = JSON.parse(abi)
+      } else {
+        contractABI = JSON.parse(abi);
       }
 
       const data = {

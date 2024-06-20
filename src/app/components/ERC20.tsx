@@ -28,12 +28,12 @@ function ERC20() {
     {
       value: "$walletAddress",
       placeHolder: "Ex: $walletAddress",
-    },
+    },{ value: "$amount", placeHolder: "$amount" }
   ]);
   const [isApproved, setIsApproved] = useState<boolean>(false);
   const [spenderAddress, setSpenderAddress] = useState<string>("");
 
-  const placeHolders = ["Ex $recipent", "Ex: $amount","Ex: $others"];
+  const placeHolders = ["Ex $recipent", "Ex: $amount", "Ex: $others"];
 
   const accPrivateKey = process.env.NEXT_PUBLIC_OWNER_PRIVATE;
 
@@ -60,7 +60,7 @@ function ERC20() {
 
       const gasPrice = (await wallet?.provider.getFeeData()).gasPrice;
       const gasLimit = "1000000";
-
+      
       const params = JSON.parse(decodedData);
 
       const contract = new Contract(
@@ -71,21 +71,23 @@ function ERC20() {
 
       const argsPassed = params.args;
 
-      let args = argsPassed;
 
-      if (argsPassed.includes("$walletAddress")) {
-        args = args.map((arg: string) => {
-          if (arg === "$walletAddress") {
-            return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
-          }
-          return arg;
-        });
-      }
+      const args = argsPassed.map((arg: string) => {
+        if (arg === "$walletAddress") {
+          return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
+        } else if (arg === "$amount") {
+          return amount;
+        }
+        return arg;
+      });
+
 
       const encodedTx = contract.interface.encodeFunctionData(
         params.method,
         args
       );
+
+
       const address = await wallet.getAddress();
       const transaction: TransactionRequest = {
         from: address,
@@ -143,9 +145,12 @@ function ERC20() {
         }
         method = otherFunctionName;
         contractABI = JSON.parse(otherAbi);
-      } else {
+      } else if(functionName === "transfer") {
         method = functionName;
-        contractABI = JSON.parse(abi);
+        contractABI = JSON.parse(defaultErc20TransferAbi);
+      }else{
+        method = functionName;
+        contractABI = JSON.parse(defaultErc20TransferFromAbi);
       }
 
       const data = {
@@ -196,14 +201,14 @@ function ERC20() {
 
     try {
       const isApproved = await contract.approve(spenderAddress, amount);
-    if (isApproved) {
-      toast.success("amount has been approved for transfer");
-      setIsApproved(true);
-    } else {
-      toast.error("Approval did not succeed");
-      setIsApproved(false);
-    }
-    } catch (error : any) {
+      if (isApproved) {
+        toast.success("amount has been approved for transfer");
+        setIsApproved(true);
+      } else {
+        toast.error("Approval did not succeed");
+        setIsApproved(false);
+      }
+    } catch (error: any) {
       toast.error(error.message);
     }
   };
@@ -288,7 +293,7 @@ function ERC20() {
             </label>
             <div className="mt-2">
               <select
-              defaultValue={"transfer"}
+                defaultValue={"transfer"}
                 onChange={handleFunctionChange}
                 className="text-black rounded-md"
               >
@@ -415,6 +420,7 @@ function ERC20() {
                 <option value={1}>Ethereum</option>
                 <option value={324}>ZkSync</option>
                 <option value={8453}>Base</option>
+                <option value={300}>ZkSync Sepolia</option>
               </select>
             </div>
           </div>

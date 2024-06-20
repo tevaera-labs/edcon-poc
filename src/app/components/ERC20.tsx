@@ -29,7 +29,7 @@ function ERC20() {
     { value: "$walletAddress", placeHolder: "Ex: $walletAddress" },
   ]);
 
-  const placeHolders = ["Ex: $walletAddress", "Ex: quantity", "Ex: others"];
+  const placeHolders = ["Ex: $walletAddress", "Ex: $quantity", "Ex: $others"];
 
   const accPrivateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
 

@@ -35,7 +35,7 @@ function Nft() {
   ]);
   const [showMessage, setShowMessage] = useState(false);
 
-  const placeHolders = ["Ex: $walletAddress", "Ex: TOKEN_URI", "Ex: Count"];
+  const placeHolders = ["Ex: $walletAddress", "Ex: $TOKEN_URI", "Ex: $Count"];
 
   const accPrivateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
 

@@ -4,9 +4,7 @@ import {
   defaultErc20TransferAbi,
   defaultErc20TransferFromAbi,
 } from "../../utils/erc20abi";
-import { TransactionRequest } from "ethers";
 import { Contract, Provider, Wallet } from "zksync-ethers";
-import { Transaction } from "ethers";
 import { QRCode } from "react-qrcode-logo";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";

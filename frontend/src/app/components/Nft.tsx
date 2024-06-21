@@ -3,8 +3,6 @@ import axios from "axios";
 
 import React, { ChangeEvent, useState } from "react";
 import { QRCode } from "react-qrcode-logo";
-import { Transaction } from "ethers";
-import { TransactionRequest } from "ethers";
 import { Provider, Wallet, Contract } from "zksync-ethers";
 import { toast, ToastContainer } from "react-toastify";
 import { defaultErc721TransferFromAbi } from "../../utils/erc721abi";

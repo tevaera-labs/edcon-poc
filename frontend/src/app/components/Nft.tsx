@@ -2,7 +2,6 @@ import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import axios from "axios";
 
 import React, { ChangeEvent, useState } from "react";
-import { decryptMessage, encrypt } from "../lib/encryption";
 import { QRCode } from "react-qrcode-logo";
 import { Transaction } from "ethers";
 import { TransactionRequest } from "ethers";
@@ -60,13 +59,13 @@ function Nft() {
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     e.preventDefault();
-    const res = await axios.post("http://localhost:3000/executeTransaction", {
+    const res = await axios.post("http://localhost:3000/encryption", {
       action: "decrypt",
       message: encodedData,
     });
 
     const decryptedData = res.data.decryptedMessage;
-    console.log(decryptedData)
+    console.log(decryptedData);
     setDecodeData(JSON.stringify(decryptedData));
   };
 
@@ -78,69 +77,35 @@ function Nft() {
 
   const executeTx = async (e: any) => {
     e.preventDefault();
-    setIsLoading(true);
+    // setIsLoading(true);
 
     try {
-      const provider = new Provider("https://zksync-sepolia.drpc.org");
-      const wallet = new Wallet(accPrivateKey as string, provider);
-
-      const gasPrice = (await wallet?.provider.getFeeData()).gasPrice;
-      const gasLimit = "1000000";
-
-      const params = JSON.parse(decodedData);
-
-      const contract = new Contract(
-        params.contractAddress,
-        params.contractABI,
-        wallet
-      );
-
-      const argsPassed = params.args;
-
-      let args;
-      if (functionName === "transferFrom") {
-        args = argsPassed.map((arg: string) => {
-          if (arg === "$walletAddress") {
-            return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
-          } else if (arg === "$operator") {
-            return operatorAddress;
-          } else if (arg === "$tokenId") {
-            return 1;
-          }
-          return arg;
-        });
-      }
-
-      const encodedTx = contract.interface.encodeFunctionData(
-        params.method,
-        args
-      );
-
-      const address = await wallet.getAddress();
-      const transaction: TransactionRequest = {
-        from: address,
-        nonce: await wallet.provider.getTransactionCount(address),
-        to: params.contractAddress,
-        gasLimit,
-        gasPrice: gasPrice?.toString(),
-        data: encodedTx,
+      await decrypt(e);
+      const decryptedData = JSON.parse(decodedData);
+      const { contractAddress, contractABI, method, reward, args, argsValue } =
+        decryptedData;
+      const { amount, spender, tokenId } = argsValue;
+      const newargsValue = {
+        amount,
+        spender,
+        tokenId,
       };
 
-      const signedTx = await wallet.signTransaction(transaction);
-      // console.log(signedTx, "check,", Transaction.from(signedTx).serialized);
+      const res = await axios.post("http://localhost:3000/executeTransaction", {
+        walletAddress: "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072",
+        contractAddress,
+        contractABI,
+        method,
+        reward,
+        argsValue: newargsValue,
+        args,
+      });
 
-      const tx = await provider.broadcastTransaction(
-        Transaction.from(signedTx).serialized
-      );
-
-      const data = await tx.wait();
-      console.log("data:", data);
-      toast.success("NFT Transfered Successfully");
-    } catch (error: any) {
-      console.log(error);
-      toast.error(error.message);
+      const result = res.data;
+      toast.success(result);
+    } catch (err: any) {
+      toast.error(err.message);
     }
-    setIsLoading(false);
   };
 
   const ownerAddress = "0x6831b65e17b309588f8Da83861679FF85C2e8974";
@@ -239,10 +204,15 @@ function Nft() {
         contractABI,
         method,
         args,
+        argsValue: {
+          tokenId: 1, // call contract to get tokenId,
+          spender: operatorAddress,
+        },
+        reward: "other",
         chainId: ChainId?.toString,
       };
 
-      const res = await axios.post("http://localhost:3000/executeTransaction", {
+      const res = await axios.post("http://localhost:3000/encryption", {
         action: "encrypt",
         message: data,
       });

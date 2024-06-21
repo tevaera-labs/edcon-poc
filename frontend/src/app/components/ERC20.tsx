@@ -1,5 +1,4 @@
 import React, { ChangeEvent, useState } from "react";
-import { decryptMessage, encrypt } from "../lib/encryption";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import {
   defaultErc20TransferAbi,
@@ -44,13 +43,13 @@ function ERC20() {
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     e.preventDefault();
-    const res = await axios.post("http://localhost:3000/executeTransaction", {
+    const res = await axios.post("http://localhost:3000/encryption", {
       action: "decrypt",
       message: encodedData,
     });
 
     const decryptedData = res.data.decryptedMessage;
-    console.log(decryptedData)
+    console.log(decryptedData);
     setDecodeData(JSON.stringify(decryptedData));
   };
 
@@ -62,75 +61,34 @@ function ERC20() {
 
   const executeTx = async (e: any) => {
     e.preventDefault();
-    setIsLoading(true);
+    // setIsLoading(true);
     try {
-      const provider = new Provider("https://zksync-sepolia.drpc.org");
-      const wallet = new Wallet(accPrivateKey as string, provider);
-
-      const gasPrice = (await wallet?.provider.getFeeData()).gasPrice;
-      const gasLimit = "1000000";
-
-      const params = JSON.parse(decodedData);
-
-      const contract = new Contract(
-        params.contractAddress,
-        params.contractABI,
-        wallet
-      );
-
-      const argsPassed = params.args;
-
-      let args;
-      if (functionName === "transfer") {
-        args = argsPassed.map((arg: string) => {
-          if (arg === "$walletAddress") {
-            return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
-          } else if (arg === "$amount") {
-            return amount;
-          }
-          return arg;
-        });
-      } else if (functionName === "transferFrom") {
-        args = argsPassed.map((arg: string) => {
-          if (arg === "$recipient") {
-            return "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072";
-          } else if (arg === "$sender") {
-            return spenderAddress;
-          } else if (arg === "$amount") {
-            return amount;
-          }
-          return arg;
-        });
-      }
-
-      const encodedTx = contract.interface.encodeFunctionData(
-        params.method,
-        args
-      );
-
-      const address = await wallet.getAddress();
-      const transaction: TransactionRequest = {
-        from: address,
-        nonce: await wallet.provider.getTransactionCount(address),
-        to: params.contractAddress,
-        gasLimit,
-        gasPrice: gasPrice?.toString(),
-        data: encodedTx,
+      await decrypt(e);
+      const decryptedData = JSON.parse(decodedData);
+      const { contractAddress, contractABI, method, reward, args, argsValue } = decryptedData;
+      const {amount, spender, tokenId} = argsValue
+      const newargsValue = {
+        amount,
+        spender,
+        tokenId,
       };
 
-      const signedTx = await wallet.signTransaction(transaction);
-      // console.log(signedTx, "check,", Transaction.from(signedTx).serialized);
+      const res = await axios.post("http://localhost:3000/executeTransaction", {
+        walletAddress: "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072",
+        contractAddress,
+        contractABI,
+        method,
+        reward,
+        argsValue: newargsValue,
+        args
+      });
 
-      const tx = await provider.broadcastTransaction(
-        Transaction.from(signedTx).serialized
-      );
-
-      const data = await tx.wait();
-      console.log("data:", data);
-    } catch (error) {
-      console.log(error);
+      const result = res.data;
+      toast.success(result);
+    }catch(err : any){
+      toast.error(err.message)
     }
-    setIsLoading(false);
+      
   };
 
   const handleAddInput = (
@@ -177,12 +135,17 @@ function ERC20() {
       const data = {
         contractAddress,
         contractABI,
-        method,
+        method: functionName,
         args,
+        argsValue: {
+          amount,
+          spender: spenderAddress,
+        },
+        reward: "erc20",
         chainId: ChainId?.toString,
       };
 
-      const res = await axios.post("http://localhost:3000/executeTransaction", {
+      const res = await axios.post("http://localhost:3000/encryption", {
         action: "encrypt",
         message: data,
       });

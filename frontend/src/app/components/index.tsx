@@ -32,6 +32,7 @@ export default function CreateQr() {
                     >
                       <option value={0}>ERC 20</option>
                       <option value={1}>ERC 721</option>
+                      <option value={2}>ERC 1155</option>
                     </select>
                   </div>
                 </div>

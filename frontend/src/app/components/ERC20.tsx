@@ -4,13 +4,14 @@ import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import {
   defaultErc20TransferAbi,
   defaultErc20TransferFromAbi,
-} from "@/utils/erc20abi";
+} from "../../utils/erc20abi";
 import { TransactionRequest } from "ethers";
 import { Contract, Provider, Wallet } from "zksync-ethers";
 import { Transaction } from "ethers";
 import { QRCode } from "react-qrcode-logo";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 
 function ERC20() {
   const [contractAddress, setContractAddress] = useState<string>("");
@@ -33,6 +34,7 @@ function ERC20() {
   ]);
   const [isApproved, setIsApproved] = useState<boolean>(false);
   const [spenderAddress, setSpenderAddress] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const placeHolders = ["Ex $recipent", "Ex: $amount", "Ex: $others"];
 
@@ -42,9 +44,14 @@ function ERC20() {
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     e.preventDefault();
-    const data = decryptMessage(encodedData);
-    console.log(JSON.parse(data));
-    setDecodeData(data);
+    const res = await axios.post("http://localhost:3000/executeTransaction", {
+      action: "decrypt",
+      message: encodedData,
+    });
+
+    const decryptedData = res.data.decryptedMessage;
+    console.log(decryptedData)
+    setDecodeData(JSON.stringify(decryptedData));
   };
 
   const copyQRCode = async () => {
@@ -55,6 +62,7 @@ function ERC20() {
 
   const executeTx = async (e: any) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const provider = new Provider("https://zksync-sepolia.drpc.org");
       const wallet = new Wallet(accPrivateKey as string, provider);
@@ -122,6 +130,7 @@ function ERC20() {
     } catch (error) {
       console.log(error);
     }
+    setIsLoading(false);
   };
 
   const handleAddInput = (
@@ -173,8 +182,13 @@ function ERC20() {
         chainId: ChainId?.toString,
       };
 
-      const encryptedData = encrypt(JSON.stringify(data));
-      console.log(encryptedData, "data");
+      const res = await axios.post("http://localhost:3000/executeTransaction", {
+        action: "encrypt",
+        message: data,
+      });
+
+      const encryptedData = res.data.encryptedMessage;
+
       setEncodedData(encryptedData);
       const url =
         `intent://yourapp/mint?data=${encryptedData}` +
@@ -201,6 +215,8 @@ function ERC20() {
 
   const handleTransferFrom = async (e: any) => {
     e.preventDefault();
+    setIsLoading(true);
+
     const provider = new Provider("https://zksync-sepolia.drpc.org");
     const wallet = new Wallet(accPrivateKey as string, provider);
 
@@ -223,6 +239,7 @@ function ERC20() {
     } catch (error: any) {
       toast.error(error.message);
     }
+    setIsLoading(false);
   };
 
   const handleFunctionChange = async (
@@ -331,12 +348,22 @@ function ERC20() {
                   onChange={(e) => setSpenderAddress(e.target.value)}
                   className="w-1/2 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
-                <button
-                  onClick={handleTransferFrom}
-                  className="w-1/4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                >
-                  Approve Funds
-                </button>
+                {isLoading ? (
+                  <button
+                    disabled
+                    type="button"
+                    className="cursor-not-allowed rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  >
+                    Loading..
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleTransferFrom}
+                    className="w-1/4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  >
+                    Approve Funds
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -482,13 +509,24 @@ function ERC20() {
             >
               Decode
             </button>
-            <button
-              type="submit"
-              onClick={executeTx}
-              className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Execute Transaction
-            </button>
+
+            {isLoading ? (
+              <button
+                disabled
+                type="button"
+                className="cursor-not-allowed rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                Loading..
+              </button>
+            ) : (
+              <button
+                type="submit"
+                onClick={executeTx}
+                className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                Execute Transaction
+              </button>
+            )}
           </div>
         </div>
       </div>

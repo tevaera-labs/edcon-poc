@@ -10,7 +10,7 @@ const privateKeyPath = path.resolve('./keys/private.pem');
 const publicKey = fs.readFileSync(publicKeyPath, 'utf8');
 const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
 
-export default function handler(req: NextApiRequest, res:NextApiResponse) {
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     const { action, message } = req.body;
 

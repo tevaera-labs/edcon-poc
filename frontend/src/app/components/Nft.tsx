@@ -8,11 +8,7 @@ import { Transaction } from "ethers";
 import { TransactionRequest } from "ethers";
 import { Provider, Wallet, Contract } from "zksync-ethers";
 import { toast, ToastContainer } from "react-toastify";
-import { defaultErc721TransferFromAbi } from "@/utils/erc721abi";
-const pinataSDK = require("@pinata/sdk");
-
-const jwt = process.env.NEXT_PUBLIC_PINATA_JWT;
-const pinata = new pinataSDK({ pinataJWTKey: jwt });
+import { defaultErc721TransferFromAbi } from "../../utils/erc721abi";
 
 function Nft() {
   const [contractAddress, setContractAddress] = useState<string>("");
@@ -37,8 +33,10 @@ function Nft() {
       placeHolder: "Ex: $tokenId",
     },
   ]);
+
   const [operatorAddress, setOperatorAddress] = useState<string>("");
   const [isApproved, setIsApproved] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const placeHolders = ["Ex: $walletAddress", "Ex: $token_id", "Ex: $operator"];
 
@@ -62,9 +60,14 @@ function Nft() {
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     e.preventDefault();
-    const data = decryptMessage(encodedData);
-    console.log(JSON.parse(data));
-    setDecodeData(data);
+    const res = await axios.post("http://localhost:3000/executeTransaction", {
+      action: "decrypt",
+      message: encodedData,
+    });
+
+    const decryptedData = res.data.decryptedMessage;
+    console.log(decryptedData)
+    setDecodeData(JSON.stringify(decryptedData));
   };
 
   const copyQRCode = async () => {
@@ -75,6 +78,7 @@ function Nft() {
 
   const executeTx = async (e: any) => {
     e.preventDefault();
+    setIsLoading(true);
 
     try {
       const provider = new Provider("https://zksync-sepolia.drpc.org");
@@ -131,15 +135,19 @@ function Nft() {
 
       const data = await tx.wait();
       console.log("data:", data);
-    } catch (error) {
+      toast.success("NFT Transfered Successfully");
+    } catch (error: any) {
       console.log(error);
+      toast.error(error.message);
     }
+    setIsLoading(false);
   };
 
   const ownerAddress = "0x6831b65e17b309588f8Da83861679FF85C2e8974";
 
   const handleTransferFrom = async (e: any) => {
     e.preventDefault();
+    setIsLoading(true);
 
     const provider = new Provider("https://zksync-sepolia.drpc.org");
     const wallet = new Wallet(accPrivateKey as string, provider);
@@ -176,6 +184,7 @@ function Nft() {
       toast.error(error.message);
       setIsApproved(false);
     }
+    setIsLoading(false);
   };
 
   const handleInputChange = (
@@ -233,9 +242,15 @@ function Nft() {
         chainId: ChainId?.toString,
       };
 
-      const encryptedData = encrypt(JSON.stringify(data));
-      console.log(encryptedData, "data");
+      const res = await axios.post("http://localhost:3000/executeTransaction", {
+        action: "encrypt",
+        message: data,
+      });
+
+      const encryptedData = res.data.encryptedMessage;
+
       setEncodedData(encryptedData);
+
       const url =
         `intent://yourapp/mint?data=${encryptedData}` +
         `#Intent;scheme=http;package=com.yourcompany.yourapp;end`;
@@ -387,12 +402,22 @@ function Nft() {
                     onChange={(e) => setOperatorAddress(e.target.value)}
                     className="w-1/2 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   />
-                  <button
-                    onClick={handleTransferFrom}
-                    className="w-1/4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  >
-                    Approve Funds
-                  </button>
+                  {isLoading ? (
+                    <button
+                      disabled
+                      type="button"
+                      className="cursor-not-allowed rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                      Loading..
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleTransferFrom}
+                      className="w-1/4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                      Approve Funds
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -413,7 +438,7 @@ function Nft() {
                   <option value={1}>Ethereum</option>
                   <option value={324}>ZkSync</option>
                   <option value={8453}>Base</option>
-                  <option value={300}>ZkSync Sepolia</option> 
+                  <option value={300}>ZkSync Sepolia</option>
                 </select>
               </div>
             </div>
@@ -430,7 +455,7 @@ function Nft() {
               onClick={createRawTransaction}
               className={`${
                 !isApproved && functionName === "transferFrom"
-                  ? "opacity-70"
+                  ? "opacity-70 cursor-not-allowed"
                   : "opacity-100"
               } rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}
             >
@@ -464,13 +489,23 @@ function Nft() {
             >
               Decode
             </button>
-            <button
-              type="submit"
-              onClick={executeTx}
-              className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              Execute Transaction
-            </button>
+            {isLoading ? (
+              <button
+                disabled
+                type="button"
+                className="cursor-not-allowed rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                Loading..
+              </button>
+            ) : (
+              <button
+                type="submit"
+                onClick={executeTx}
+                className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                Execute Transaction
+              </button>
+            )}
           </div>
         </div>
       </div>

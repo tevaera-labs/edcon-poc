@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import crypto from 'crypto';
 import express from "express";
 import cors from "cors"
-import { executeTransaction } from "./service/ExecuteTransaction";
+import { executeTransaction } from "./services/ExecuteTransaction";
 
 const app = express();
 app.use(express.json());
@@ -42,7 +42,7 @@ app.post("/encryption", (req: express.Request, res: express.Response) => {
                 const data = JSON.parse(decryptedMessage.toString())
                 res.status(200).json({ decryptedMessage: data });
             } catch (error: any) {
-                res.status(500).json({ error: 'Decryption failed', details: error.message });
+                res.status(401).json({ error: 'Decryption failed', details: error.message });
             }
         } else {
             res.status(400).json({ error: 'Invalid action' });
@@ -58,10 +58,10 @@ app.post("/executeTransaction", async (req: express.Request, res: express.Respon
     try {
         const data = req.body;
         const result = await executeTransaction(data);
-        return res.json(result)
+        return res.status(200).json(result)
     } catch (error) {
         console.log(error)
-        return res.json(error)
+        return res.status(400).json(error)
     }
 })
 

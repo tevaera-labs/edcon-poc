@@ -1,14 +1,11 @@
 import React, { ChangeEvent, useState } from "react";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
-import {
-  defaultErc20TransferAbi,
-  defaultErc20TransferFromAbi,
-} from "../../utils/erc20abi";
 import { Contract, Provider, Wallet } from "zksync-ethers";
 import { QRCode } from "react-qrcode-logo";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { contractABI } from "../utils/erc20abi";
 
 function ERC20() {
   const [contractAddress, setContractAddress] = useState<string>("");
@@ -16,24 +13,13 @@ function ERC20() {
   const [functionName, setFunctionName] = useState<string>("transfer");
   const [otherFunctionName, setOtherFunctionName] = useState<string>("");
 
-  const [abi, setAbi] = useState<string>("");
-  const [otherAbi, setOtherAbi] = useState<string>("");
   const [ChainId, setChainId] = useState<number>(1);
   const [encodedData, setEncodedData] = useState<string>("");
   const [decodedData, setDecodeData] = useState<string>("");
   const [qrString, setQrSTring] = useState<string>("");
-  const [inputList, setInputList] = useState([
-    {
-      value: "$walletAddress",
-      placeHolder: "Ex: $walletAddress",
-    },
-    { value: "$amount", placeHolder: "$amount" },
-  ]);
   const [isApproved, setIsApproved] = useState<boolean>(false);
   const [spenderAddress, setSpenderAddress] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const placeHolders = ["Ex $recipent", "Ex: $amount", "Ex: $others"];
 
   const accPrivateKey = process.env.NEXT_PUBLIC_OWNER_PRIVATE;
 
@@ -63,8 +49,9 @@ function ERC20() {
     try {
       await decrypt(e);
       const decryptedData = JSON.parse(decodedData);
-      const { contractAddress, contractABI, method, reward, args, argsValue } = decryptedData;
-      const {amount, spender, tokenId} = argsValue
+      const { contractAddress, contractABI, method, reward, argsValue } =
+        decryptedData;
+      const { amount, spender, tokenId } = argsValue;
       const newargsValue = {
         amount,
         spender,
@@ -72,35 +59,21 @@ function ERC20() {
       };
 
       const res = await axios.post("http://localhost:3000/executeTransaction", {
-        walletAddress: "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072",
+        walletAddress: "0x184ba627DB853244c9f17f3Cb4378cB8B39bf147",
         contractAddress,
         contractABI,
         method,
         reward,
         argsValue: newargsValue,
-        args
       });
 
       const result = res.data;
       toast.success(result);
-    }catch(err : any){
-      toast.error(err.message)
+    } catch (err: any) {
+      toast.error(err.message);
     }
-      
   };
 
-  const handleAddInput = (
-    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => {
-    event.preventDefault();
-    setInputList([
-      ...inputList,
-      {
-        value: "",
-        placeHolder: placeHolders[Math.floor(Math.random() * 3)],
-      },
-    ]);
-  };
 
   async function createRawTransaction(e: any) {
     e.preventDefault();
@@ -111,36 +84,22 @@ function ERC20() {
     }
 
     try {
-      let contractABI;
       let method = "";
-      const args = inputList.map((input) => input.value);
-
-      if (functionName === "other") {
-        if (!otherFunctionName || !otherAbi) {
-          toast.error("Make sure you fill in the contract abi , function name");
-          return;
-        }
-        method = otherFunctionName;
-        contractABI = JSON.parse(otherAbi);
-      } else if (functionName === "transfer") {
+       if (functionName === "transfer") {
         method = functionName;
-        contractABI = JSON.parse(defaultErc20TransferAbi);
       } else {
         method = functionName;
-        contractABI = JSON.parse(defaultErc20TransferFromAbi);
       }
 
       const data = {
         contractAddress,
-        contractABI,
         method: functionName,
-        args,
         argsValue: {
           amount,
           spender: spenderAddress,
         },
         reward: "erc20",
-        chainId: ChainId?.toString,
+        chainId: ChainId.toString(),
       };
 
       const res = await axios.post("http://localhost:3000/encryption", {
@@ -161,33 +120,14 @@ function ERC20() {
     }
   }
 
-  const handleInputChange = (
-    index: number,
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
-    event.preventDefault();
-    const newInputList = [...inputList];
-    newInputList[index].value = event.target.value;
-    setInputList(newInputList);
-  };
-
-  // const ownerAddress = "0x6831b65e17b309588f8Da83861679FF85C2e8974";
-  // const spenderAddress = "0x04cF2053D8bb80d9cF97f46f78627f09E383b134";
-
   const handleTransferFrom = async (e: any) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const provider = new Provider("https://zksync-sepolia.drpc.org");
+    const provider = new Provider("https://rpc.sepolia.org");
     const wallet = new Wallet(accPrivateKey as string, provider);
 
-    const contractABI = [
-      "function approve(address spender, uint256 amount) external returns (bool)",
-      "function transferFrom(address sender, address recipient, uint256 amount) external returns (bool)",
-    ];
-
     const contract = new Contract(contractAddress, contractABI, wallet);
-
     try {
       const isApproved = await contract.approve(spenderAddress, amount);
       if (isApproved) {
@@ -208,27 +148,6 @@ function ERC20() {
   ) => {
     const value = event.target.value;
     setFunctionName(value);
-
-    if (value === "transfer") {
-      setInputList([
-        {
-          value: "$walletAddress",
-          placeHolder: "Ex: $walletAddress",
-        },
-        { value: "$amount", placeHolder: "$amount" },
-      ]);
-      setAbi(JSON.stringify(defaultErc20TransferAbi));
-    } else if (value === "transferFrom") {
-      setAbi(JSON.stringify(defaultErc20TransferFromAbi));
-      setInputList([
-        {
-          value: "$sender",
-          placeHolder: "Ex: $sender",
-        },
-        { value: "$recipient", placeHolder: "Ex $recipent" },
-        { value: "$amount", placeHolder: "Ex $amount" },
-      ]);
-    }
   };
 
   return (
@@ -289,121 +208,44 @@ function ERC20() {
               >
                 <option value={"transferFrom"}>Transfer From</option>
                 <option value={"transfer"}>Transfer</option>
-                <option value={"other"}>Other</option>
+                {/* <option value={"other"}>Other</option> */}
               </select>
             </div>
           </div>
-          {functionName === "transferFrom" && (
-            <div className="sm:col-span-5 sm:col-start-1 mt-3">
-              <label
-                htmlFor="spender-address"
-                className="block text-sm font-medium leading-6 text-gray-900"
-              >
-                Spender Address
-              </label>
-              <div className="mt-2 flex justify-between">
-                <input
-                  type="text"
-                  name="spender-address"
-                  id="spender-address"
-                  onChange={(e) => setSpenderAddress(e.target.value)}
-                  className="w-1/2 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                />
-                {isLoading ? (
-                  <button
-                    disabled
-                    type="button"
-                    className="cursor-not-allowed rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  >
-                    Loading..
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleTransferFrom}
-                    className="w-1/4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  >
-                    Approve Funds
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-          {functionName !== "transfer" && functionName !== "transferFrom" && (
-            <div className="col-span-full">
-              <div className="sm:col-span-5 sm:col-start-1">
-                <label
-                  htmlFor="Function Name"
-                  className="block text-sm font-medium leading-6 text-gray-900"
-                >
-                  Function Name
-                </label>
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    name="Function Name"
-                    id="Function Name"
-                    onChange={(e) => setOtherFunctionName(e.target.value)}
-                    autoComplete="address-level2"
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
-              </div>
-              <div className="col-span-full mt-4">
-                <label
-                  htmlFor="parameters"
-                  className="block text-sm font-medium leading-6 text-gray-900"
-                >
-                  Parameters (Click on &nbsp;
-                  <span>
-                    <PlusCircleIcon
-                      style={{ display: "inline-block" }}
-                      className="h-5 w-5 -m-1"
-                    />
-                  </span>
-                  &nbsp; icon to add more parameters)
-                </label>
-                <div className="mt-2">
-                  {inputList.map((input, index) => (
-                    <input
-                      key={index}
-                      type="text"
-                      value={input.value}
-                      placeholder={input.placeHolder}
-                      onChange={(event) => handleInputChange(index, event)}
-                      className="mb-2 me-2 p-2 border border-gray-300 rounded text-black"
-                    />
-                  ))}
-                </div>
+          <div className="sm:col-span-5 sm:col-start-1 mt-3">
+            <label
+              htmlFor="spender-address"
+              className="block text-sm font-medium leading-6 text-gray-900"
+            >
+              Spender Address
+            </label>
+            <div className="mt-2 flex justify-between">
+              <input
+                type="text"
+                name="spender-address"
+                id="spender-address"
+                onChange={(e) => setSpenderAddress(e.target.value)}
+                className="w-1/2 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+              />
+              {isLoading ? (
                 <button
-                  onClick={(event) => handleAddInput(event)}
-                  className="px-1 py-2 bg-blue-500 text-white rounded"
+                  disabled
+                  type="button"
+                  className="cursor-not-allowed rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
-                  <PlusCircleIcon
-                    className="mx-auto h-5 w-5 -m-1"
-                    aria-hidden="true"
-                  />
+                  Loading..
                 </button>
-              </div>
-              <div className="sm:col-span-6 mt-5">
-                <label
-                  htmlFor="abi"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+              ) : (
+                <button
+                  onClick={handleTransferFrom}
+                  className="w-1/4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
-                  Contract ABI
-                </label>
-                <div className="mt-2">
-                  <textarea
-                    id="abi"
-                    name="abi"
-                    rows={4}
-                    onChange={(e) => setAbi(e.target.value)}
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    defaultValue={""}
-                  />
-                </div>
-              </div>
+                  Approve Funds
+                </button>
+              )}
             </div>
-          )}
+          </div>
+
           <div className="sm:col-span-5 mt-4">
             <label
               htmlFor="chain-id"

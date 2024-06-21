@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
-import Nft from "./Nft";
 import ERC20 from "./ERC20";
+import ERC721 from "./ERC721";
+import ERC1155 from "./ERC1155";
 
 export default function CreateQr() {
   const [tokenEnabled, setTokenEnabled] = useState(0);  
@@ -37,7 +38,7 @@ export default function CreateQr() {
                   </div>
                 </div>
               </div>
-              {!tokenEnabled ? <ERC20 /> : <Nft />}
+              { tokenEnabled === 0 ? <ERC20/> : tokenEnabled === 1 ? <ERC721/>: <ERC1155/>}
             </div>
           </form>
         </div>

@@ -12,7 +12,7 @@ dotenv.config();
 const accPrivateKey = process.env.WALLET_PRIVATE_KEY as string;
 
 const checkAllowance = async (contract: Contract, owner: string, spender: string, amount: string) => {
-  const allowance = await contract.allowance(owner, spender);
+  const allowance = await contract.allowance(spender, owner);
   if (allowance < amount) {
     throw new Error(`Allowance is too low: ${allowance.toString()}`);
   }
@@ -47,7 +47,7 @@ export const executeTransaction = async (data: any) => {
     wallet
   );
 
-  const { spender, tokenId, amount, mintData } = argsValue;
+  const { spender, tokenId, amount } = argsValue;
 
   console.log(spender, walletAddress)
 
@@ -62,7 +62,7 @@ export const executeTransaction = async (data: any) => {
       await contract.transfer(walletAddress, tokenId);
     }
   } else if (method === "mint") {
-    const hexdata = hexlify(getBytes(mintData)); // Additional data, if any
+    const hexdata = hexlify(getBytes("0x")); // Additional data, if any
     await contract.mint(walletAddress, tokenId, amount, hexdata);
   }
 

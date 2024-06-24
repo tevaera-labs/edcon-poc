@@ -14,7 +14,6 @@ function ERC1155() {
   const [decodedData, setDecodeData] = useState<string>("");
   const [tokenId, setTokenId] = useState<number>(1);
   const [amount, setAmount] = useState<number>(1);
-  const [mintData,setMintData] = useState<string>("")
 
   const handleChainId = (event: ChangeEvent<HTMLSelectElement>) => {
     setChainId(Number(event.target.value));
@@ -92,7 +91,6 @@ function ERC1155() {
         argsValue: {
           tokenId, // call contract to get tokenId,
           amount,
-          mintData
         },
         reward: "erc1155",
         chainId: ChainId.toString(),
@@ -194,24 +192,6 @@ function ERC1155() {
                   id="amount"
                   onChange={(e) => setAmount(Number(e.target.value))}
                   autoComplete="amount"
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                />
-              </div>
-            </div>
-
-            <div className="col-span-full">
-              <label
-                htmlFor="mint-data"
-                className="block text-sm font-medium leading-6 text-gray-900"
-              >
-                Mint Data
-              </label>
-              <div className="mt-2">
-                <input
-                  type="text"
-                  name="mint-data"
-                  id="mint-data"
-                  onChange={(e) => setMintData(e.target.value)}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
               </div>

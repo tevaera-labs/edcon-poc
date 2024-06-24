@@ -63,9 +63,20 @@ Ensure you have the following installed on your local machine:
 ## Usage
 
 1. **Add Contract Details**:
-   - Navigate to the contract details form.
-   - Fill in the required fields with the partner's contract information.
-   - Submit the form to generate a QR code.
+   **ERC 20**
+      - Navigate to the contract details form.
+      - Fill in the required fields with the partner's contract information.
+      - You will find two functions ,
+            1. Transfer (Transfers directly from owner's wallet)
+            2. Transferfrom (Transfers from spenders wallet on behalf of owner)
+      - Fill in the required fields with the partner's contract information.
+      - Submit the form to generate a QR code.
+   **ERC 721**
+      - Here you will have only function , that is TransferFrom.
+      - TokenIds needs to be stored in DB (You can store tokenIds range from the partner or starting tokenId and then increment as you keep sending NFTs)
+   **ERC 1155**
+      - Here we have the multi token functionality where partners can add multi token transfer.
+      - Each field will have respective tokenId and amount, to allow spender/operator to send on behalf of the partner
 
 2. **Generate QR Code**:
    - After submitting the contract details, a QR code will be displayed.

@@ -1,27 +1,28 @@
-import React, { ChangeEvent, useState } from "react";
-import { PlusCircleIcon } from "@heroicons/react/24/solid";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import { Contract, Provider, Wallet } from "zksync-ethers";
 import { QRCode } from "react-qrcode-logo";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { contractABI } from "../utils/erc20abi";
+import { erc20Abi } from "../utils/erc20abi";
+import { chainRpcMap } from "../utils/chainRpcMap";
 
-function ERC20() {
+function ERC20(props: any) {
   const [contractAddress, setContractAddress] = useState<string>("");
   const [amount, setAmount] = useState<number>(0);
   const [functionName, setFunctionName] = useState<string>("transfer");
-  const [otherFunctionName, setOtherFunctionName] = useState<string>("");
 
   const [ChainId, setChainId] = useState<number>(1);
   const [encodedData, setEncodedData] = useState<string>("");
   const [decodedData, setDecodeData] = useState<string>("");
   const [qrString, setQrSTring] = useState<string>("");
   const [isApproved, setIsApproved] = useState<boolean>(false);
-  const [spenderAddress, setSpenderAddress] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const accPrivateKey = process.env.NEXT_PUBLIC_OWNER_PRIVATE;
+  const { walletAddress } = props;
+
+  const accPrivateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
+  const spenderAddress = process.env.NEXT_PUBLIC_SPENDER_ADDRESS;
 
   const decrypt = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -59,7 +60,7 @@ function ERC20() {
       };
 
       const res = await axios.post("http://localhost:3000/executeTransaction", {
-        walletAddress: "0x184ba627DB853244c9f17f3Cb4378cB8B39bf147",
+        walletAddress,
         contractAddress,
         method,
         reward,
@@ -123,10 +124,14 @@ function ERC20() {
     e.preventDefault();
     setIsLoading(true);
 
-    const provider = new Provider("https://sepolia.era.zksync.dev");
+    if (!contractAddress) {
+      toast.error("Enter contract address");
+    }
+
+    const provider = new Provider(chainRpcMap[ChainId]);
     const wallet = new Wallet(accPrivateKey as string, provider);
 
-    const contract = new Contract(contractAddress, contractABI, wallet);
+    const contract = new Contract(contractAddress, erc20Abi, wallet);
     try {
       const isApproved = await contract.approve(spenderAddress, amount);
       if (isApproved) {
@@ -213,20 +218,7 @@ function ERC20() {
           </div>
           {functionName === "transferFrom" && (
             <div className="sm:col-span-5 sm:col-start-1 mt-3">
-              <label
-                htmlFor="spender-address"
-                className="block text-sm font-medium leading-6 text-gray-900"
-              >
-                Spender Address
-              </label>
               <div className="mt-2 flex justify-between">
-                <input
-                  type="text"
-                  name="spender-address"
-                  id="spender-address"
-                  onChange={(e) => setSpenderAddress(e.target.value)}
-                  className="w-1/2 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                />
                 {isLoading ? (
                   <button
                     disabled
@@ -238,7 +230,7 @@ function ERC20() {
                 ) : (
                   <button
                     onClick={handleTransferFrom}
-                    className="w-1/4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   >
                     Approve Funds
                   </button>

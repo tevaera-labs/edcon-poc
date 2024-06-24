@@ -1,11 +1,42 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ERC20 from "./ERC20";
 import ERC721 from "./ERC721";
 import ERC1155 from "./ERC1155";
 
+
+interface CustomWindow extends Window {
+  ethereum?: any; // Define the ethereum property with any type or specify a more specific type if available
+}
+declare let window: CustomWindow;
+
 export default function CreateQr() {
-  const [tokenEnabled, setTokenEnabled] = useState(0);  
+  const [tokenEnabled, setTokenEnabled] = useState(0); 
+  const [walletAddress, setWalletAddress] = useState<string>('');
+ 
+
+  useEffect(()=>{
+    const connectWallet = async () => {
+      if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
+        try {
+          // Requesting Ethereum accounts
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          // Checking if accounts are available
+          if (accounts && accounts.length > 0) {
+            setWalletAddress(accounts[0]);
+            console.log(accounts)
+          } else {
+            console.error('No accounts found.');
+          }
+        } catch (error) {
+          console.error('Error connecting to MetaMask:', error);
+        }
+      } else {
+        alert('MetaMask is not installed or not yet initialized. Please ensure MetaMask is installed and try again.');
+      }
+    };
+    connectWallet()
+  },[walletAddress])
 
   return (
     <div className="container mx-auto px-8">
@@ -38,7 +69,7 @@ export default function CreateQr() {
                   </div>
                 </div>
               </div>
-              { tokenEnabled === 0 ? <ERC20/> : tokenEnabled === 1 ? <ERC721/>: <ERC1155/>}
+              { tokenEnabled === 0 ? <ERC20 walletAddress={walletAddress} /> : tokenEnabled === 1 ? <ERC721 walletAddress={walletAddress}/>: <ERC1155 walletAddress={walletAddress}/>}
             </div>
           </form>
         </div>

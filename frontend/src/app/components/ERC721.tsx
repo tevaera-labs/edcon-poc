@@ -5,21 +5,26 @@ import React, { ChangeEvent, useState } from "react";
 import { QRCode } from "react-qrcode-logo";
 import { Provider, Wallet, Contract } from "zksync-ethers";
 import { toast, ToastContainer } from "react-toastify";
-import { contractABI } from "../utils/erc20abi";
+import { erc721abi } from "../utils/erc721abi";
+import { chainRpcMap } from "../utils/chainRpcMap";
 
-function ERC721() {
+function ERC721(props: any) {
   const [contractAddress, setContractAddress] = useState<string>("");
   const [functionName, setFunctionName] = useState<string>("transferFrom");
   const [ChainId, setChainId] = useState<number>(1);
   const [qrString, setQrSTring] = useState<string>("");
   const [encodedData, setEncodedData] = useState<string>("");
   const [decodedData, setDecodeData] = useState<string>("");
+  const [startFrom, setStartFrom] = useState<number>(1);
+  const [endWith, setEndWith] = useState<number>(2);
 
-  const [operatorAddress, setOperatorAddress] = useState<string>("");
   const [isApproved, setIsApproved] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  const {walletAddress} = props;
+
   const accPrivateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
+  const spenderAddress = process.env.NEXT_PUBLIC_SPENDER_ADDRESS;
 
   const handleChainId = (event: ChangeEvent<HTMLSelectElement>) => {
     setChainId(Number(event.target.value));
@@ -52,17 +57,23 @@ function ERC721() {
     try {
       await decrypt(e);
       const decryptedData = JSON.parse(decodedData);
-      const { contractAddress, contractABI, method, reward, args, argsValue, chainId } =
-        decryptedData;
-      const { amount, spender, tokenId } = argsValue;
+      const {
+        contractAddress,
+        contractABI,
+        method,
+        reward,
+        args,
+        argsValue,
+        chainId,
+      } = decryptedData;
+      const { amount, spender } = argsValue;
       const newargsValue = {
         amount,
         spender,
-        tokenId,
       };
 
       const res = await axios.post("http://localhost:3000/executeTransaction", {
-        walletAddress: "0xaE807e098C4bdb5e83E0629Ca49a50Bd1daa2072",
+        walletAddress,
         contractAddress,
         contractABI,
         method,
@@ -79,26 +90,29 @@ function ERC721() {
     }
   };
 
-
   const handleTransferFrom = async (e: any) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const provider = new Provider("https://zksync-sepolia.drpc.org");
+    const provider = new Provider(chainRpcMap[ChainId]);
     const wallet = new Wallet(accPrivateKey as string, provider);
 
-    const contract = new Contract(contractAddress, contractABI, wallet);
+    const contract = new Contract(contractAddress, erc721abi, wallet);
     try {
-      const isApproved = false;
+      // this data the walletAddress will come from logged in user of admin dashboard
+      const isApproved = await contract.isApprovedForAll(
+        walletAddress,
+        spenderAddress
+      );
 
       if (!isApproved) {
         console.log(
-          `Operator is not approved. Approving operator ${operatorAddress}...`
+          `Operator is not approved. Approving operator ${spenderAddress}...`
         );
 
         // Set approval for all tokens
         const approveTx = await contract.setApprovalForAll(
-          operatorAddress,
+          spenderAddress,
           true
         );
         console.log("Approval transaction hash:", approveTx.hash);
@@ -122,7 +136,7 @@ function ERC721() {
   ) => {
     const value = event.target.value;
     setFunctionName(value);
-  }
+  };
 
   async function createRawTransaction(e: any) {
     e.preventDefault();
@@ -133,10 +147,11 @@ function ERC721() {
         contractAddress,
         method,
         argsValue: {
-          tokenId: 1, // call contract to get tokenId,
-          spender: operatorAddress,
+          spender: spenderAddress,
+          startFrom,
+          endWith
         },
-        reward: "erc721", 
+        reward: "erc721",
         chainId: ChainId.toString(),
       };
 
@@ -205,21 +220,29 @@ function ERC721() {
               </div>
             </div>
 
-            <div className="sm:col-span-5 sm:col-start-1 mt-3">
-              <label
-                htmlFor="spender-address"
-                className="block text-sm font-medium leading-6 text-gray-900"
-              >
-                Spender Address
-              </label>
-              <div className="mt-2 flex justify-between">
+            <div className="sm:col-span-full mt-2 flex justify-between py-2">
+              <div>
+                <label>Starting Token Id </label>
                 <input
-                  type="text"
-                  name="spender-address"
-                  id="spender-address"
-                  onChange={(e) => setOperatorAddress(e.target.value)}
-                  className="w-1/2 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  type="number"
+                  placeholder="startFrom"
+                  value={startFrom}
+                  onChange={(event) => setStartFrom(Number(event.target.value))}
                 />
+              </div>
+              <div>
+                <label>Ending Token Id </label>
+                <input
+                  type="number"
+                  placeholder="endWith"
+                  value={endWith}
+                  onChange={(event) => setEndWith(Number(event.target.value))}
+                />
+              </div>
+            </div>
+
+            <div className="sm:col-span-5 sm:col-start-1 mt-3">
+              <div className="mt-2 flex justify-between">
                 {isLoading ? (
                   <button
                     disabled
@@ -231,7 +254,7 @@ function ERC721() {
                 ) : (
                   <button
                     onClick={handleTransferFrom}
-                    className="w-1/4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   >
                     Approve Funds
                   </button>

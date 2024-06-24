@@ -47,25 +47,32 @@ export const executeTransaction = async (data: any) => {
     wallet
   );
 
-  const { spender, tokenId, amount } = argsValue;
+  const spender = process.env.SPENDER_ADDRESS as string;
 
-  console.log(spender, walletAddress)
+  const { amount , tokenDetails } = argsValue;
+  const tokenId = 1; // this will be fetched from db and auto incremented after a successfull transfer
 
   if (method === "transferFrom") {
-    await checkAllowance(contract, await wallet.getAddress(), spender, amount);
-    await checkBalance(contract, spender, amount);
-    await contract.transferFrom(spender, walletAddress, 100);
+    if(reward === "erc20"){
+      await checkAllowance(contract, await wallet.getAddress(), spender, amount);
+      await checkBalance(contract, spender, amount);
+      await contract.transferFrom(spender, walletAddress, amount);
+    }else{
+      await contract.transferFrom(spender, walletAddress, tokenId);
+    }
   } else if (method === "transfer") {
     if (reward === "erc20") {
       await contract.transfer(walletAddress, amount);
     } else {
+      //tokenId will come from backend increment by 1 and add it here...
       await contract.transfer(walletAddress, tokenId);
     }
-  } else if (method === "mint") {
+  } else if (method === "multiTransfer") {
     const hexdata = hexlify(getBytes("0x")); // Additional data, if any
-    await contract.mint(walletAddress, tokenId, amount, hexdata);
+    const ids = tokenDetails.map((item: any)=> item.tokenId);
+    const amounts = tokenDetails.map((item: any)=> item.value);
+    await contract.safeBatchTransferFrom(spender, walletAddress, ids, amounts, hexdata);
   }
 
-  return "Successfully transfered reward"
-
+  return "Successfully transfered reward";
 }

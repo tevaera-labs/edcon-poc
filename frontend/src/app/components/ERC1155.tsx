@@ -253,7 +253,7 @@ function ERC1155(props: any) {
                     />
                     <input
                       type="text"
-                      placeholder="Value"
+                      placeholder="Amount"
                       value={item.value}
                       onChange={(event) => handleInputValueChange(index, event)}
                     />

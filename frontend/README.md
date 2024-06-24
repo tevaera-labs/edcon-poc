@@ -78,11 +78,14 @@ Ensure you have the following installed on your local machine:
       - Here we have the multi token functionality where partners can add multi token transfer.
       - Each field will have respective tokenId and amount, to allow spender/operator to send on behalf of the partner
 
-2. **Generate QR Code**:
+2. **ChainId**
+      - Before QR code generation select the chainId , your contract is in.
+
+3. **Generate QR Code**:
    - After submitting the contract details, a QR code will be displayed.
    - Partners can share this QR code with users.
 
-3. **Claim Rewards**:
+4. **Claim Rewards**:
    - Users scan the QR code using any QR code reader.
    - They will be redirected to the rewards claim page.
 

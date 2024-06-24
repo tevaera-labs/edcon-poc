@@ -49,17 +49,17 @@ export const executeTransaction = async (data: any) => {
 
   const { spender, tokenId, amount, mintData } = argsValue;
 
-  // console.log(spender, walletAddress)
+  console.log(spender, walletAddress)
 
   if (method === "transferFrom") {
     await checkAllowance(contract, await wallet.getAddress(), spender, amount);
     await checkBalance(contract, spender, amount);
-    await contract.transferFrom(spender, "0x6831b65e17b309588f8Da83861679FF85C2e8974", 1000000);
+    await contract.transferFrom(spender, walletAddress, 100);
   } else if (method === "transfer") {
     if (reward === "erc20") {
       await contract.transfer(walletAddress, amount);
     } else {
-      await contract.transfer(walletAddress, tokenId)
+      await contract.transfer(walletAddress, tokenId);
     }
   } else if (method === "mint") {
     const hexdata = hexlify(getBytes(mintData)); // Additional data, if any

@@ -18,6 +18,7 @@ function ERC1155(props: any) {
   const [isApproved, setIsApproved] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [inputList, setInputList] = useState([{ value: "", tokenId: "" }]);
+  const [tokenData, setTokenData] = useState<string>("0x");
   const { walletAddress } = props;
 
   const accPrivateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
@@ -62,19 +63,15 @@ function ERC1155(props: any) {
         argsValue,
         chainId,
       } = decryptedData;
-      const { tokenDetails } = argsValue;
-      const newargsValue = {
-        tokenDetails,
-      };
 
       const res = await axios.post("http://localhost:3000/executeTransaction", {
-        walletAddress: walletAddress,
+        recipientAddress: walletAddress,
         contractAddress,
         contractABI,
         method,
         reward,
         chainId,
-        argsValue: newargsValue,
+        argsValue,
       });
 
       const result = res.data;
@@ -93,6 +90,12 @@ function ERC1155(props: any) {
 
   async function createRawTransaction(e: any) {
     e.preventDefault();
+    const index = inputList.length - 1;
+    if (!inputList[index].value || Number(inputList[index].value) === 0) {
+      toast.error("Token values cannot be empty or zero");
+      return;
+    }
+
     try {
       const method = functionName;
 
@@ -101,6 +104,7 @@ function ERC1155(props: any) {
         method,
         argsValue: {
           tokenDetails: inputList,
+          tokenData
         },
         reward: "erc1155",
         chainId: ChainId.toString(),
@@ -169,7 +173,15 @@ function ERC1155(props: any) {
     event: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
     event.preventDefault();
-    setInputList([...inputList, { value: "", tokenId: "" }]);
+    const index = inputList.length - 1;
+    if (
+      !(inputList[index].tokenId && inputList[index].value) &&
+      functionName === "multiTransfer"
+    ) {
+      toast.error("Fill in tokenId and Values.");
+    } else {
+      setInputList([...inputList, { value: "", tokenId: "" }]);
+    }
   };
 
   const handleInputValueChange = (
@@ -233,6 +245,7 @@ function ERC1155(props: any) {
                   className="text-black rounded-md"
                 >
                   <option value={"multiTransfer"}> Multi Token Transfer</option>
+                  <option value={"mint"}> Mint</option>
                 </select>
               </div>
             </div>
@@ -258,34 +271,49 @@ function ERC1155(props: any) {
                   </div>
                 );
               })}
-              <button
-                className="mt-3 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                onClick={handleAddInput}
-              >
-                Add More
-              </button>
+              {functionName === "multiTransfer" && (
+                <button
+                  className="mt-3 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  onClick={handleAddInput}
+                >
+                  Add More
+                </button>
+              )}
             </div>
 
-            <div className="sm:col-span-5 sm:col-start-1 mt-3">
-              <div className="mt-2 flex justify-between">
-                {isLoading ? (
-                  <button
-                    disabled
-                    type="button"
-                    className="cursor-not-allowed rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  >
-                    Loading..
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleTransferFrom}
-                    className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  >
-                    Approve Funds
-                  </button>
-                )}
+            {functionName === "mint" && (
+              <div className="sm:col-span-5 sm:col-start-1 mt-3">
+                <input
+                  type="text"
+                  placeholder="tokenData"
+                  value={tokenData}
+                  onChange={(event) => setTokenData(event.target.value)}
+                />
               </div>
-            </div>
+            )}
+
+            {functionName === "multiTransfer" && (
+              <div className="sm:col-span-5 sm:col-start-1 mt-3">
+                <div className="mt-2 flex justify-between">
+                  {isLoading ? (
+                    <button
+                      disabled
+                      type="button"
+                      className="cursor-not-allowed rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                      Loading..
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleTransferFrom}
+                      className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                      Approve Funds
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="sm:col-span-2">
               <label
@@ -316,10 +344,10 @@ function ERC1155(props: any) {
               Cancel
             </button>
             <button
-              disabled={functionName === "transferFrom" && !isApproved}
+              disabled={functionName === "multiTransfer" && !isApproved}
               onClick={createRawTransaction}
               className={`${
-                !isApproved && functionName === "transferFrom"
+                !isApproved && functionName === "multiTransfer"
                   ? "opacity-70 cursor-not-allowed"
                   : "opacity-100"
               } rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}

@@ -73,7 +73,7 @@ function ERC721(props: any) {
       };
 
       const res = await axios.post("http://localhost:3000/executeTransaction", {
-        walletAddress,
+        recipientAddress: walletAddress,
         contractAddress,
         contractABI,
         method,

@@ -50,7 +50,6 @@ export const executeTransaction = async (data: any) => {
   const spender = process.env.SPENDER_ADDRESS as string;
 
   const { amount , tokenDetails } = argsValue;
-  const tokenId = 1; // this will be fetched from db and auto incremented after a successfull transfer
 
   if (method === "transferFrom") {
     if(reward === "erc20"){
@@ -58,6 +57,7 @@ export const executeTransaction = async (data: any) => {
       await checkBalance(contract, spender, amount);
       await contract.transferFrom(spender, walletAddress, amount);
     }else{
+      const tokenId = 1; // this will be fetched from db and auto incremented after a successfull transfer
       await contract.transferFrom(spender, walletAddress, tokenId);
     }
   } else if (method === "transfer") {
@@ -65,6 +65,7 @@ export const executeTransaction = async (data: any) => {
       await contract.transfer(walletAddress, amount);
     } else {
       //tokenId will come from backend increment by 1 and add it here...
+      const tokenId = 1; // this will be fetched from db and auto incremented after a successfull transfer
       await contract.transfer(walletAddress, tokenId);
     }
   } else if (method === "multiTransfer") {

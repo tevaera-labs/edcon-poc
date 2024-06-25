@@ -55,7 +55,7 @@ export const executeTransaction = async (data: any) => {
     if(reward === "erc20"){
       await checkAllowance(contract, await wallet.getAddress(), spender, amount);
       await checkBalance(contract, spender, amount);
-      await contract.transferFrom(spender, walletAddress, amount);
+      await contract.transferFrom(spender, walletAddress, amount);  
     }else{
       const tokenId = 1; // this will be fetched from db and auto incremented after a successfull transfer
       await contract.transferFrom(spender, walletAddress, tokenId);

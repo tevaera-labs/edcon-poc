@@ -60,13 +60,11 @@ function ERC1155(props: any) {
         method,
         reward,
         argsValue,
-        mintData,
         chainId,
       } = decryptedData;
       const { tokenDetails } = argsValue;
       const newargsValue = {
         tokenDetails,
-        mintData,
       };
 
       const res = await axios.post("http://localhost:3000/executeTransaction", {

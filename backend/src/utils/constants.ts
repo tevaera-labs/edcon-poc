@@ -10,3 +10,11 @@ export enum Reward{
     ERC721 = "erc721",
     ERC1155 = "erc1155"
 }
+
+export enum ContractMethods{
+    TRANSFER = "transfer",
+    TRANSFER_FROM = "transferFrom",
+    APPROVE = "approve",
+    SAFE_BATCH_TRANSFER_FROM = "safeBatchTransferFrom",
+    MINT = "mint"
+}

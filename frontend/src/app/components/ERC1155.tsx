@@ -10,7 +10,7 @@ import { Reward, chainRpcMap } from "../utils/constants";
 
 function ERC1155(props: any) {
   const [contractAddress, setContractAddress] = useState<string>("");
-  const [functionName, setFunctionName] = useState<string>("multiTransfer");
+  const [functionName, setFunctionName] = useState<string>("safeBatchTransferFrom");
   const [ChainId, setChainId] = useState<number>(1);
   const [qrString, setQrSTring] = useState<string>("");
   const [encodedData, setEncodedData] = useState<string>("");
@@ -103,7 +103,7 @@ function ERC1155(props: any) {
           tokenDetails: inputList,
           tokenData
         },
-        reward: "erc1155",
+        reward: Reward.ERC1155,
         chainId: ChainId.toString(),
       };
 
@@ -154,7 +154,7 @@ function ERC1155(props: any) {
     const index = inputList.length - 1;
     if (
       !(inputList[index].tokenId && inputList[index].value) &&
-      functionName === "multiTransfer"
+      functionName === "safeBatchTransferFrom"
     ) {
       toast.error("Fill in tokenId and Values.");
     } else {
@@ -222,7 +222,7 @@ function ERC1155(props: any) {
                   onChange={handleFunctionChange}
                   className="text-black rounded-md"
                 >
-                  <option value={"multiTransfer"}> Multi Token Transfer</option>
+                  <option value={"safeBatchTransferFrom"}> Batch Transfer</option>
                   <option value={"mint"}> Mint</option>
                 </select>
               </div>
@@ -249,7 +249,7 @@ function ERC1155(props: any) {
                   </div>
                 );
               })}
-              {functionName === "multiTransfer" && (
+              {functionName === "safeBatchTransferFrom" && (
                 <button
                   className="mt-3 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   onClick={handleAddInput}
@@ -270,7 +270,7 @@ function ERC1155(props: any) {
               </div>
             )}
 
-            {functionName === "multiTransfer" && (
+            {functionName === "safeBatchTransferFrom" && (
               <div className="sm:col-span-5 sm:col-start-1 mt-3">
                 <div className="mt-2 flex justify-between">
                   {isLoading ? (
@@ -322,10 +322,10 @@ function ERC1155(props: any) {
               Cancel
             </button>
             <button
-              disabled={functionName === "multiTransfer" && !isApproved}
+              disabled={functionName === "safeBatchTransferFrom" && !isApproved}
               onClick={createRawTransaction}
               className={`${
-                !isApproved && functionName === "multiTransfer"
+                !isApproved && functionName === "safeBatchTransferFrom"
                   ? "opacity-70 cursor-not-allowed"
                   : "opacity-100"
               } rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600`}

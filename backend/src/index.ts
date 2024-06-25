@@ -68,11 +68,11 @@ app.post("/approveFunds", async (req: express.Request, res: express.Response) =>
 app.post("/executeTransaction", async (req: express.Request, res: express.Response) => {
     try {
         const data = req.body;
-        const result = await executeTransaction(data);
-        return res.status(200).json(result)
+        const { status, message } = await executeTransaction(data);
+        return res.status(status).json(message)
     } catch (error) {
         console.log(error)
-        return res.status(400).json(error)
+        return res.status(500).json(error)
     }
 })
 

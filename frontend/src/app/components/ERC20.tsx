@@ -21,9 +21,6 @@ function ERC20(props: any) {
 
   const { walletAddress } = props;
 
-  const accPrivateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
-  const spenderAddress = process.env.NEXT_PUBLIC_SPENDER_ADDRESS;
-
   const decrypt = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => {
@@ -52,10 +49,9 @@ function ERC20(props: any) {
       const decryptedData = JSON.parse(decodedData);
       const { contractAddress, method, reward, argsValue, chainId } =
         decryptedData;
-      const { amount, spender, tokenId } = argsValue;
+      const { amount, tokenId } = argsValue;
       const newargsValue = {
         amount,
-        spender,
         tokenId,
       };
 
@@ -96,7 +92,6 @@ function ERC20(props: any) {
         method: functionName,
         argsValue: {
           amount,
-          spender: spenderAddress,
         },
         reward: "erc20",
         chainId: ChainId.toString(),

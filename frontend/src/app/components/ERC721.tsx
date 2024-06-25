@@ -23,9 +23,6 @@ function ERC721(props: any) {
 
   const {walletAddress} = props;
 
-  const accPrivateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
-  const spenderAddress = process.env.NEXT_PUBLIC_SPENDER_ADDRESS;
-
   const handleChainId = (event: ChangeEvent<HTMLSelectElement>) => {
     setChainId(Number(event.target.value));
   };
@@ -127,7 +124,6 @@ function ERC721(props: any) {
         contractAddress,
         method,
         argsValue: {
-          spender: spenderAddress,
           startFrom,
           endWith
         },

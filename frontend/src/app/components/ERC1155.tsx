@@ -21,9 +21,6 @@ function ERC1155(props: any) {
   const [tokenData, setTokenData] = useState<string>("");
   const { walletAddress } = props;
 
-  const accPrivateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
-  const spenderAddress = process.env.NEXT_PUBLIC_SPENDER_ADDRESS;
-
   const handleChainId = (event: ChangeEvent<HTMLSelectElement>) => {
     setChainId(Number(event.target.value));
   };

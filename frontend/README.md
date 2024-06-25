@@ -75,8 +75,10 @@ Ensure you have the following installed on your local machine:
       - Here you will have only function , that is TransferFrom.
       - TokenIds needs to be stored in DB (You can store tokenIds range from the partner or starting tokenId and then increment as you keep sending NFTs)
    **ERC 1155**
-      - Here we have the multi token functionality where partners can add multi token transfer.
-      - Each field will have respective tokenId and amount, to allow spender/operator to send on behalf of the partner
+      - Here we have the two methods 
+         1. Multi token functionality where partners can add multi token transfer.
+         2. Mint functionality where each tokenId can be minted with an appropriate value.
+      - Each field will have respective tokenId and amount, to allow spender/operator to send/mint.
 
 2. **ChainId**
       - Before QR code generation select the chainId , your contract is in.

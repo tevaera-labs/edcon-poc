@@ -5,7 +5,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { erc20Abi } from "../utils/erc20abi";
-import { chainRpcMap } from "../utils/chainRpcMap";
+import { Reward, chainRpcMap } from "../utils/constants";
 
 function ERC20(props: any) {
   const [contractAddress, setContractAddress] = useState<string>("");
@@ -124,25 +124,20 @@ function ERC20(props: any) {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!contractAddress) {
-      toast.error("Enter contract address");
-    }
+    const res = await axios.post("http://localhost:3000/approveFunds", {
+      walletAddress,
+      chainId: ChainId,
+      reward: Reward.ERC20,
+      contractAddress,
+      amount
+    });
 
-    const provider = new Provider(chainRpcMap[ChainId]);
-    const wallet = new Wallet(accPrivateKey as string, provider);
-
-    const contract = new Contract(contractAddress, erc20Abi, wallet);
-    try {
-      const isApproved = await contract.approve(spenderAddress, amount);
-      if (isApproved) {
-        toast.success("amount has been approved for transfer");
-        setIsApproved(true);
-      } else {
-        toast.error("Approval did not succeed");
-        setIsApproved(false);
-      }
-    } catch (error: any) {
-      toast.error(error.message);
+    if(res.status === 200){
+      setIsApproved(true);
+      toast.success(res.data);
+    }else{
+      setIsApproved(false);
+      toast.error(res.data)
     }
     setIsLoading(false);
   };

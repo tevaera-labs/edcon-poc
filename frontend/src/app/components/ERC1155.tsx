@@ -6,7 +6,7 @@ import { QRCode } from "react-qrcode-logo";
 import { toast, ToastContainer } from "react-toastify";
 import { Contract, Provider, Wallet } from "zksync-ethers";
 import { erc1155abi } from "../utils/erc1155abi";
-import { chainRpcMap } from "../utils/chainRpcMap";
+import { Reward, chainRpcMap } from "../utils/constants";
 
 function ERC1155(props: any) {
   const [contractAddress, setContractAddress] = useState<string>("");
@@ -18,7 +18,7 @@ function ERC1155(props: any) {
   const [isApproved, setIsApproved] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [inputList, setInputList] = useState([{ value: "", tokenId: "" }]);
-  const [tokenData, setTokenData] = useState<string>("0x");
+  const [tokenData, setTokenData] = useState<string>("");
   const { walletAddress } = props;
 
   const accPrivateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
@@ -133,38 +133,19 @@ function ERC1155(props: any) {
     e.preventDefault();
     setIsLoading(true);
 
-    const provider = new Provider(chainRpcMap[ChainId]);
-    const wallet = new Wallet(accPrivateKey as string, provider);
+    const res = await axios.post("http://localhost:3000/approveFunds", {
+      walletAddress,
+      chainId: ChainId,
+      reward: Reward.ERC1155,
+      contractAddress
+    });
 
-    const contract = new Contract(contractAddress, erc1155abi, wallet);
-    try {
-      const isApproved = await contract.isApprovedForAll(
-        walletAddress,
-        spenderAddress
-      );
-
-      if (!isApproved) {
-        console.log(
-          `Operator is not approved. Approving operator ${spenderAddress}...`
-        );
-
-        // Set approval for all tokens
-        const approveTx = await contract.setApprovalForAll(
-          spenderAddress,
-          true
-        );
-        console.log("Approval transaction hash:", approveTx.hash);
-
-        // Wait for the transaction to be mined
-        await approveTx.wait();
-        toast.success("Operator approved.");
-      } else {
-        toast.success("Operator is already approved.");
-      }
+    if(res.status === 200){
       setIsApproved(true);
-    } catch (error: any) {
-      toast.error(error.message);
+      toast.success(res.data);
+    }else{
       setIsApproved(false);
+      toast.error(res.data)
     }
     setIsLoading(false);
   };

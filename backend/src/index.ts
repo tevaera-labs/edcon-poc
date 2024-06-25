@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import express from "express";
 import cors from "cors"
 import { executeTransaction } from "./services/ExecuteTransaction";
+import { approveFunds } from "./services/ApproveFunds";
 
 const app = express();
 app.use(express.json());
@@ -53,8 +54,18 @@ app.post("/encryption", (req: express.Request, res: express.Response) => {
 
 });
 
-app.post("/executeTransaction", async (req: express.Request, res: express.Response) => {
+app.post("/approveFunds", async (req: express.Request, res: express.Response) => {
+    try {
+        const data = req.body;
+        const result = await approveFunds(data);
+        res.status(200).json(result);
+    } catch (error) {
+        console.log(error)
+        res.status(400).json(error);
+    }
+})
 
+app.post("/executeTransaction", async (req: express.Request, res: express.Response) => {
     try {
         const data = req.body;
         const result = await executeTransaction(data);

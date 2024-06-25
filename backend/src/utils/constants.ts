@@ -4,3 +4,9 @@ export const chainRpcMap:any = {
     324: "https://mainnet.era.zksync.io",
     1: "https://eth-mainnet.public.blastapi.io"
 }
+
+export enum Reward{
+    ERC20 = "erc20",
+    ERC721 = "erc721",
+    ERC1155 = "erc1155"
+}

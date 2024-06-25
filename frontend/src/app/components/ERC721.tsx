@@ -6,7 +6,7 @@ import { QRCode } from "react-qrcode-logo";
 import { Provider, Wallet, Contract } from "zksync-ethers";
 import { toast, ToastContainer } from "react-toastify";
 import { erc721abi } from "../utils/erc721abi";
-import { chainRpcMap } from "../utils/chainRpcMap";
+import { Reward, chainRpcMap } from "../utils/constants";
 
 function ERC721(props: any) {
   const [contractAddress, setContractAddress] = useState<string>("");
@@ -94,39 +94,19 @@ function ERC721(props: any) {
     e.preventDefault();
     setIsLoading(true);
 
-    const provider = new Provider(chainRpcMap[ChainId]);
-    const wallet = new Wallet(accPrivateKey as string, provider);
+    const res = await axios.post("http://localhost:3000/approveFunds", {
+      walletAddress,
+      chainId: ChainId,
+      reward: Reward.ERC721,
+      contractAddress
+    });
 
-    const contract = new Contract(contractAddress, erc721abi, wallet);
-    try {
-      // this data the walletAddress will come from logged in user of admin dashboard
-      const isApproved = await contract.isApprovedForAll(
-        walletAddress,
-        spenderAddress
-      );
-
-      if (!isApproved) {
-        console.log(
-          `Operator is not approved. Approving operator ${spenderAddress}...`
-        );
-
-        // Set approval for all tokens
-        const approveTx = await contract.setApprovalForAll(
-          spenderAddress,
-          true
-        );
-        console.log("Approval transaction hash:", approveTx.hash);
-
-        // Wait for the transaction to be mined
-        await approveTx.wait();
-        toast.success("Operator approved.");
-      } else {
-        toast.success("Operator is already approved.");
-      }
+    if(res.status === 200){
       setIsApproved(true);
-    } catch (error: any) {
-      toast.error(error.message);
+      toast.success(res.data);
+    }else{
       setIsApproved(false);
+      toast.error(res.data)
     }
     setIsLoading(false);
   };

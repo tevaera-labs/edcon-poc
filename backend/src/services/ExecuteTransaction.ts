@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import { erc20abi } from "../utils/erc20abi";
 import { erc721abi } from "../utils/erc721abi";
 import { erc1155abi } from "../utils/erc1155abi";
-import { chainRpcMap } from "../utils/chainRpcMap";
+import { chainRpcMap } from "../utils/constants";
 
 dotenv.config();
 
@@ -77,8 +77,8 @@ export const executeTransaction = async (data: any) => {
     const hexdata = tokenData ? hexlify(toUtf8Bytes(tokenData)) : "0x"; // Additional data, if any
     const id = tokenDetails[0].tokenId ?? 1;   // here you will have to get id from db or onchain accordingly
     const amount = tokenDetails[0].value;
-    console.log(hexdata, id, amount);
     await contract.mint(recipientAddress, id, amount, hexdata);
+    return "Successfully minted the token";
   }else{
     throw new Error("Invalid Request")
   }

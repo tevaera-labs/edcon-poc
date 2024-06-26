@@ -10,9 +10,8 @@ import { ContractMethods, chainRpcMap } from "../utils/constants";
 dotenv.config();
 
 const accPrivateKey = process.env.WALLET_PRIVATE_KEY as string;
-const spender = process.env.SPENDER_ADDRESS as string;
 
-const executeErc20Transaction = async (contract: Contract, data: any) => {
+const executeErc20Transaction = async (contract: Contract, data: any, spender: string) => {
   const { method, argsValue, recipientAddress } = data
   const { amount } = argsValue;
 
@@ -27,7 +26,7 @@ const executeErc20Transaction = async (contract: Contract, data: any) => {
   }
 }
 
-const executeErc721Transaction = async (contract: Contract, data: any) => {
+const executeErc721Transaction = async (contract: Contract, data: any, spender: string) => {
   const { method, recipientAddress } = data
 
   //tokenId will come from backend increment by 1 and add it here...
@@ -40,7 +39,7 @@ const executeErc721Transaction = async (contract: Contract, data: any) => {
   }
 }
 
-const executeErc1155Transaction = async (contract: Contract, data: any) => {
+const executeErc1155Transaction = async (contract: Contract, data: any, spender: string) => {
   const { method, recipientAddress, argsValue } = data
   const { tokenDetails, tokenData } = argsValue;
 
@@ -76,6 +75,7 @@ export const executeTransaction = async (data: any) => {
     const rpcUrl = chainRpcMap[chainId];
     const provider = new Provider(rpcUrl);
     const wallet = new Wallet(accPrivateKey as string, provider);
+    const spender = await wallet.getAddress();
 
     if (reward === "erc20") {
       contractAbi = erc20abi;
@@ -84,7 +84,7 @@ export const executeTransaction = async (data: any) => {
         contractAbi,
         wallet
       );
-      response.message = await executeErc20Transaction(contract, data);
+      response.message = await executeErc20Transaction(contract, data, spender);
     } else if (reward === "erc721") {
       contractAbi = erc721abi;
       const contract = new Contract(
@@ -92,7 +92,7 @@ export const executeTransaction = async (data: any) => {
         contractAbi,
         wallet
       );
-      response.message = await executeErc721Transaction(contract, data);
+      response.message = await executeErc721Transaction(contract, data, spender);
     } else {
       contractAbi = erc1155abi;
       const contract = new Contract(
@@ -100,7 +100,7 @@ export const executeTransaction = async (data: any) => {
         contractAbi,
         wallet
       );
-      response.message = await executeErc1155Transaction(contract, data);
+      response.message = await executeErc1155Transaction(contract, data, spender);
     }
   } catch (error: any) {
     response.status = 400;

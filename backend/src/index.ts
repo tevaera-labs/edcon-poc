@@ -11,12 +11,9 @@ app.use(cors());
 
 dotenv.config()
 
-const privateKey = process.env.PRIVATE_KEY as string;
-const publicKey = process.env.PUBLIC_KEY as string;
+const privateKey = process.env.RSA_ENCRYPTION_PRIVATE_KEY as string;
+const publicKey = process.env.RSA_ENCRYPTION_PUBLIC_KEY as string;
 
-app.get("/", (req: express.Request, res: express.Response) => {
-    res.json("hello")
-})
 
 app.post("/encryption", (req: express.Request, res: express.Response) => {
     const { action, message } = req.body;

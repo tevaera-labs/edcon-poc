@@ -1,10 +1,8 @@
-import React, { ChangeEvent, useEffect, useState } from "react";
-import { Contract, Provider, Wallet } from "zksync-ethers";
+import React, { ChangeEvent, useState } from "react";
 import { QRCode } from "react-qrcode-logo";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { erc20Abi } from "../utils/erc20abi";
 import { Reward, chainRpcMap } from "../utils/constants";
 
 function ERC20(props: any) {
@@ -33,6 +31,7 @@ function ERC20(props: any) {
     const decryptedData = res.data.decryptedMessage;
     console.log(decryptedData);
     setDecodeData(JSON.stringify(decryptedData));
+    return decryptedData;
   };
 
   const copyQRCode = async () => {
@@ -45,8 +44,7 @@ function ERC20(props: any) {
     e.preventDefault();
     // setIsLoading(true);
     try {
-      await decrypt(e);
-      const decryptedData = JSON.parse(decodedData);
+      const decryptedData = await decrypt(e);
       const { contractAddress, method, reward, argsValue, chainId } =
         decryptedData;
       const { amount, tokenId } = argsValue;

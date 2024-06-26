@@ -1,12 +1,9 @@
-import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import axios from "axios";
 
 import React, { ChangeEvent, useState } from "react";
 import { QRCode } from "react-qrcode-logo";
 import { toast, ToastContainer } from "react-toastify";
-import { Contract, Provider, Wallet } from "zksync-ethers";
-import { erc1155abi } from "../utils/erc1155abi";
-import { Reward, chainRpcMap } from "../utils/constants";
+import { Reward } from "../utils/constants";
 
 function ERC1155(props: any) {
   const [contractAddress, setContractAddress] = useState<string>("");
@@ -35,8 +32,8 @@ function ERC1155(props: any) {
     });
 
     const decryptedData = res.data.decryptedMessage;
-    console.log(decryptedData);
     setDecodeData(JSON.stringify(decryptedData));
+    return decryptedData;
   };
 
   const copyQRCode = async () => {
@@ -50,8 +47,8 @@ function ERC1155(props: any) {
     // setIsLoading(true);
 
     try {
-      await decrypt(e);
-      const decryptedData = JSON.parse(decodedData);
+      
+      const decryptedData = await decrypt(e);
       const {
         contractAddress,
         contractABI,

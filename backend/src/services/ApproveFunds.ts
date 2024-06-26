@@ -9,12 +9,12 @@ import { Reward, chainRpcMap } from "../utils/constants";
 dotenv.config();
 
 const accPrivateKey = process.env.WALLET_PRIVATE_KEY as string;
-const spenderAddress = process.env.SPENDER_ADDRESS as string;
 
 export const approveFunds = async (data: any) => {
     const { chainId, contractAddress, reward, walletAddress, amount } = data;
     const provider = new Provider(chainRpcMap[chainId]);
     const wallet = new Wallet(accPrivateKey as string, provider);
+    const spenderAddress = await wallet.getAddress();
 
     let contractAbi;
     if (reward === Reward.ERC20) {

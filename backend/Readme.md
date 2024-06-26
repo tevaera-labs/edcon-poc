@@ -29,7 +29,14 @@ Ensure you have the following installed on your machine:
 
 ### Environment Setup
 
-1. **Configure environment variables**
+1. **Generate RSA Public and Private Keys**
+   Visit this website - https://travistidwell.com/jsencrypt/demo/
+   Click on generate new keys.
+   Copy the keys and paste it in your .env like this
+      - RSA_ENCRYPTION_PRIVATE_KEY="your copied private key"
+      - RSA_ENCRYPTION_PUBLIC_KEY="your copied public key"
+
+2. **Configure environment variables**
 
    Create a `.env` file in the root directory of the project. You can refer to the `env.template` file provided in the repository for the required environment variables.
 
@@ -37,7 +44,7 @@ Ensure you have the following installed on your machine:
    cp env.template .env
    ```
 
-2. **Update the `.env` file**
+3. **Update the `.env` file**
 
    Open the `.env` file and update the values according to your environment setup.
    Make sure you generate Public and Private key (RSA)

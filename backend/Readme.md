@@ -31,6 +31,7 @@ Ensure you have the following installed on your machine:
 
 1. **Generate RSA Public and Private Keys**
    Visit this website - https://travistidwell.com/jsencrypt/demo/
+   
    Click on generate new keys.
    Copy the keys and paste it in your .env like this
       - RSA_ENCRYPTION_PRIVATE_KEY="your copied private key"

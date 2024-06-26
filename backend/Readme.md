@@ -68,6 +68,14 @@ Here are some additional scripts you might find useful:
   ```bash
   yarn build
   ```
+## Chains we support currently
+   - Zksync
+   - Base
+
+   If you want to add more chains, follow these steps:
+      1. Go to src/utils/constants, inside of chainRpcMap you can add your **chainId** as key, and **rpcUrl** as value.
+      2. Then go to the respective {Token}.tsx (Eg: ERC20.tsx,ERC721.tsx etc ), inside <select></select> tag for chainId , you need to add your new <options></options> tag and pass the chainId to the value of the options tag.  
+
 
 ### Contributing
 

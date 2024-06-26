@@ -11,7 +11,7 @@ dotenv.config();
 
 const accPrivateKey = process.env.WALLET_PRIVATE_KEY as string;
 
-const executeErc20Transaction = async (contract: Contract, data: any, spender: string) => {
+const executeErc20Transaction = async (contract: Contract, data: any, spenderAddress: string) => {
   const { method, argsValue, recipientAddress } = data
   const { amount } = argsValue;
 
@@ -19,27 +19,27 @@ const executeErc20Transaction = async (contract: Contract, data: any, spender: s
     await contract.transfer(recipientAddress, amount);
     return "Successfully transfered token";
   } else if (method === ContractMethods.TRANSFER_FROM) {
-    await contract.transferFrom(spender, recipientAddress, amount);
+    await contract.transferFrom(spenderAddress, recipientAddress, amount);
     return "Successfully transfered token"
   } else {
     throw new Error("Invalid Request");
   }
 }
 
-const executeErc721Transaction = async (contract: Contract, data: any, spender: string) => {
+const executeErc721Transaction = async (contract: Contract, data: any, spenderAddress: string) => {
   const { method, recipientAddress } = data
 
   //tokenId will come from backend increment by 1 and add it here...
   const tokenId = 1; // this will be fetched from db and auto incremented after a successfull transfer
   if (method === ContractMethods.TRANSFER_FROM) {
-    await contract.transferFrom(spender, recipientAddress, tokenId);
+    await contract.transferFrom(spenderAddress, recipientAddress, tokenId);
     return "Successfully transfered token"
   } else {
     throw new Error("Invalid Request")
   }
 }
 
-const executeErc1155Transaction = async (contract: Contract, data: any, spender: string) => {
+const executeErc1155Transaction = async (contract: Contract, data: any, spenderAddress: string) => {
   const { method, recipientAddress, argsValue } = data
   const { tokenDetails, tokenData } = argsValue;
 
@@ -49,7 +49,7 @@ const executeErc1155Transaction = async (contract: Contract, data: any, spender:
     const ids = tokenDetails.map((item: any) => item.tokenId);
     const amounts = tokenDetails.map((item: any) => item.value);
 
-    await contract.safeBatchTransferFrom(spender, recipientAddress, ids, amounts, hexdata);
+    await contract.safeBatchTransferFrom(spenderAddress, recipientAddress, ids, amounts, hexdata);
     return "Successully transfered token"
   } else if (method === ContractMethods.MINT) {
     const hexdata = tokenData ? hexlify(toUtf8Bytes(tokenData)) : "0x"; // Additional data, if any
@@ -75,7 +75,7 @@ export const executeTransaction = async (data: any) => {
     const rpcUrl = chainRpcMap[chainId];
     const provider = new Provider(rpcUrl);
     const wallet = new Wallet(accPrivateKey as string, provider);
-    const spender = await wallet.getAddress();
+    const spenderAddress = await wallet.getAddress();
 
     if (reward === "erc20") {
       contractAbi = erc20abi;
@@ -84,7 +84,7 @@ export const executeTransaction = async (data: any) => {
         contractAbi,
         wallet
       );
-      response.message = await executeErc20Transaction(contract, data, spender);
+      response.message = await executeErc20Transaction(contract, data, spenderAddress);
     } else if (reward === "erc721") {
       contractAbi = erc721abi;
       const contract = new Contract(
@@ -92,7 +92,7 @@ export const executeTransaction = async (data: any) => {
         contractAbi,
         wallet
       );
-      response.message = await executeErc721Transaction(contract, data, spender);
+      response.message = await executeErc721Transaction(contract, data, spenderAddress);
     } else {
       contractAbi = erc1155abi;
       const contract = new Contract(
@@ -100,7 +100,7 @@ export const executeTransaction = async (data: any) => {
         contractAbi,
         wallet
       );
-      response.message = await executeErc1155Transaction(contract, data, spender);
+      response.message = await executeErc1155Transaction(contract, data, spenderAddress);
     }
   } catch (error: any) {
     response.status = 400;
